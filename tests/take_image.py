@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 import pyzed.sl as sl
 
@@ -28,7 +28,7 @@ def main():
         timestamp = zed.get_timestamp(sl.TIME_REFERENCE.TIME_REFERENCE_CURRENT) 
         print("Image resolution: {0} x {1} || Image timestamp: {2}\n".format(image.get_width(), image.get_height(), 
             timestamp))
-    
+        
     zed.close()
 
 if __name__ == "__main__":
