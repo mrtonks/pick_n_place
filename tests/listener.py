@@ -1,34 +1,33 @@
 #!/usr/bin/env python
 
-# import zmq
 import sys
 import rospy
 import pickle
-import numpy as np
-# from zmq.eventloop import ioloop, zmqstream
-from PIL import Image as PILImage
-from std_msgs.msg import String
-from sensor_msgs.msg import Image
-from cv_bridge import CvBridge, CvBridgeError
-#sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
-#import cv2
-
+import json
 import os
 import random
 import math
+import zmq
+import time
 import matplotlib
 import matplotlib.pyplot as plt
+import numpy as np
+# from zmq.eventloop import ioloop, zmqstream
+from PIL import Image as PILImage
+from sensor_msgs.msg import Image
+from pick_n_place.msg import ObjectInfo
+from cv_bridge import CvBridge, CvBridgeError
 
 # Root directory of the project
 ROOT_DIR = os.path.abspath("../Mask_RCNN/")
-sys.path.append(ROOT_DIR)  # To find local version of the library
+sys.path.append(ROOT_DIR) # To find local version of the library
 
 from mrcnn import utils
 import mrcnn.model as modellib
 from mrcnn import visualize
 from mrcnn.config import Config
 
-import skimage
+#import skimage
 
 CLASSES = [ 
     'BG', 'cat_cup', 'black_trainer', 'small_tupper',
@@ -40,9 +39,10 @@ class InferenceConfig(Config):
     NAME = 'inference'
     GPU_COUNT = 1
     IMAGES_PER_GPU = 1
+
     IMAGE_MIN_DIM = 512
     IMAGE_MAX_DIM = 512
-    DETECTION_MIN_CONFIDENCE = 0.99
+    DETECTION_MIN_CONFIDENCE = 0.98
     NUM_CLASSES = 11
     BACKBONE = 'resnet50'
     
@@ -94,10 +94,38 @@ def callback(msg):
     
     results = model.detect([rearranged], verbose=1)
     r = results[0]
+    print(r)
+    objects_detected = {}
+    for idx in range(len(r['class_ids'])):
+        obj_info = dict()
+        obj_info['name'] = CLASSES[r['class_ids'][idx]] 
+        obj_info['coordinates'] = [value for value in r['rois'][idx]]
+        objects_detected[str(idx)] = obj_info
+        #obj_info = ObjectInfo()
+        #obj_info.name = CLASSES[r['class_ids'][idx]]    
+        #obj_info.coordinates = r['rois'][idx]
+        #objects_detected[str(idx)] = obj_info
+    
+    print(objects_detected)
+    
+    print('Sending data for distance calculation...')
+    ctx = zmq.Context()
+    s = ctx.socket(zmq.PUB)
+    s.bind("tcp://*:5556")
+    time.sleep(1.0)
+    
+    try:
+        s.send_multipart([pickle.dumps(objects_detected, protocol=2)])
+        print(pickle.dumps(objects_detected))
+        time.sleep(0.1)
+        print("Sent!")
+    except KeyboardInterrupt:
+        sys.exit()
+    
     #for i, class_id in zip(range(len(r['class_ids'])), r['class_ids']):
     #    print(CLASSES[class_id], r['scores'][i])
-    visualize.display_instances(rearranged, r['rois'], r['masks'], r['class_ids'], 
-                                CLASSES, r['scores'], figsize=(8,8))
+    #visualize.display_instances(rearranged, r['rois'], r['masks'], r['class_ids'], 
+    #                            CLASSES, r['scores'], figsize=(10,10))
     #visualize.display_top_masks(rearranged, r['masks'], r['class_ids'], 
     #                            CLASSES, limit=4)
     
@@ -119,21 +147,7 @@ def callback(msg):
     #     for class_id in r['class_ids']:
     #         print(CLASSES[class_id - 1])
         #print(r)
-    rospy.signal_shutdown('stopping')
-
-
-
-#{"supercategory": "cup", "id": 1, "name": "cat_cup"}, 
-# {"supercategory": "shoe", "id": 2, "name": "black_trainer"}, 
-# {"supercategory": "tupper", "id": 3, "name": "small_tupper"}, 
-# {"supercategory": "umbrella", "id": 4, "name": "katana_umbrella"}, 
-# {"supercategory": "bottle", "id": 5, "name": "harrogate_water"}, 
-# {"supercategory": "bottle", "id": 6, "name": "feet_spray"}, 
-# {"supercategory": "bottle", "id": 7, "name": "highland_water"}, 
-# {"supercategory": "plush", "id": 8, "name": "catbus"}, 
-# {"supercategory": "hat", "id": 9, "name": "snapback_hat"}, 
-# {"supercategory": "cardgame", "id": 10, "name": "unstable_unicorns"}
-#{"supercategory": "bottle", "id": 1, "name": "highland_water"}, {"supercategory": "bottle", "id": 2, "name": "harrogate_water"}, {"supercategory": "bottle", "id": 3, "name": "feet_spray"}, {"supercategory": "umbrella", "id": 4, "name": "katana_umbrella"}, {"supercategory": "cardgame", "id": 5, "name": "unstable_unicorns"}, {"supercategory": "hat", "id": 6, "name": "snapback_hat"}, {"supercategory": "shoe", "id": 7, "name": "black_trainer"}, {"supercategory": "cup", "id": 8, "name": "cat_cup"}, {"supercategory": "tupper", "id": 9, "name": "small_tupper"}, {"supercategory": "plushy", "id": 10, "name": "catbus"}
+    #rospy.signal_shutdown('stopping')
 
 def process_message(msg):
     print('received:', msg)
@@ -145,6 +159,7 @@ def listener():
     rospy.init_node('listener', anonymous=True)
     rospy.Subscriber('/zed/zed_node/rgb_raw/image_raw_color', Image, callback)
     # #spin() simply keeps python from exiting until this node is stopped
+    rospy.sleep(5)
     rospy.spin()
    
     ### zeroMQ works
