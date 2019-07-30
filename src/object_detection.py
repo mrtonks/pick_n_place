@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os
 import sys
@@ -23,7 +23,7 @@ MODEL_DIR = os.path.join(ROOT_DIR, "logs/cocosynth_dataset20190724T0156/mask_rcn
 CLASSES = [ 
     'BG', 'cat_cup', 'black_trainer', 'small_tupper',
     'katana_umbrella', 'harrogate_water', 'feet_spray',
-    'highland_water', 'catbus', 'snapback_hat'
+    'highland_water', 'catbus', 'snapback_hat', 'unstable_unicorns'
 ]
 
 start_time = None
@@ -36,7 +36,7 @@ class InferenceConfig(Config):
 
     IMAGE_MIN_DIM = 512
     IMAGE_MAX_DIM = 512
-    DETECTION_MIN_CONFIDENCE = 0.98
+    DETECTION_MIN_CONFIDENCE = 0.99
     NUM_CLASSES = 11
     BACKBONE = 'resnet50'
     
@@ -105,11 +105,11 @@ def getObjectsDetected(data):
         sys.exit(1)
     
     r = results[0]
-    #visualize.display_instances(rgb_image, r['rois'], r['masks'], r['class_ids'], 
-    #                            CLASSES, r['scores'], figsize=(10,10))
+    visualize.display_instances(rgb_image, r['rois'], r['masks'], r['class_ids'], 
+                               CLASSES, r['scores'], figsize=(10,10))
     count_classes = len(r['class_ids']) # Count classes
     if count_classes == 0:
-        print('No objects found. Increase min confidence if there is an object.')
+        print('No objects found. Decrease min confidence if there is an object.')
         return
     
     print('Objects found: {}'.format(count_classes))
@@ -117,6 +117,9 @@ def getObjectsDetected(data):
     objects_detected = {} # Change back to {} if doesn't work
     for idx in range(count_classes):
         obj_info = dict()
+        print(CLASSES)
+        print(r['class_ids'])
+        print(r['class_ids'][idx])
         obj_info['name'] = CLASSES[r['class_ids'][idx]] 
         obj_info['coordinates'] = [value for value in r['rois'][idx]]
         objects_detected[str(idx)] = obj_info
@@ -126,10 +129,18 @@ def getObjectsDetected(data):
 def main():
     rospy.init_node('object_detection', log_level=rospy.INFO)
     print('Taking photo for object detection...')
-    #rate = rospy.Rate(50)
+
     rospy.Subscriber('/zed/zed_node/rgb_raw/image_raw_color', Image, getObjectsDetected)
-    #rate.sleep()
-    rospy.spin()
+    #rate = rospy.Rate(50)
+    try:                
+        #rate.sleep()
+        rospy.spin()
+    except rospy.ROSInterruptException:
+        rospy.signal_shutdown('ROS stopped')
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        rospy.signal_shutdown('ROS stopped')        
+    

@@ -12,9 +12,9 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 from zmq.eventloop import ioloop, zmqstream
 
-import moveit_commander
-import moveit_msgs.msg
-import geometry_msgs.msg
+#import moveit_commander
+#import moveit_msgs.msg
+#import geometry_msgs.msg
 
 
 bridge = None
@@ -38,17 +38,17 @@ def getDistanceFromCenter(data, depth_array, u, v):
     print 'Distance object to center: {}'.format(dist_center_to_object)
     
     ## try to move baxter
-    moveit_commander.roscpp_initialize(sys.argv)
-    rospy.init_node('move_group_python_interface_tutorial', anonymous=True)
-    robot = moveit_commander.RobotCommander()
-    scene = moveit_commander.PlanningSceneInterface()
-    group = moveit_commander.MoveGroupCommander("left_arm")
-    display_trajectory_publisher = rospy.Publisher(
-                                    '/move_group/display_planned_path',
-                                    moveit_msgs.msg.DisplayTrajectory)
-    print "============ Waiting for RVIZ..."
-    rospy.sleep(10)
-    print "============ Starting tutorial "
+    # moveit_commander.roscpp_initialize(sys.argv)
+    # rospy.init_node('move_group_python_interface_tutorial', anonymous=True)
+    # robot = moveit_commander.RobotCommander()
+    # scene = moveit_commander.PlanningSceneInterface()
+    # group = moveit_commander.MoveGroupCommander("left_arm")
+    # display_trajectory_publisher = rospy.Publisher(
+    #                                 '/move_group/display_planned_path',
+    #                                 moveit_msgs.msg.DisplayTrajectory)
+    # print "============ Waiting for RVIZ..."
+    # rospy.sleep(10)
+    # print "============ Starting tutorial "
     
 
 def receiveObjectsDetected(data):
@@ -101,7 +101,7 @@ def getImageDepth(data):
     closest_obj = np.argmin(obj_distances)  
     print 'Objects detected: {}'.format(', '.join(obj_names))          
     print 'Closest object: {} - {} m\n\n'.format(obj_names[closest_obj], obj_distances[closest_obj])            
-    getDistanceFromCenter(data, depth_array, obj_u[closest_obj], obj_v[closest_obj])
+    #getDistanceFromCenter(data, depth_array, obj_u[closest_obj], obj_v[closest_obj])
     
     
     objects_detected = None
@@ -129,7 +129,10 @@ def main():
     
     rospy.init_node('distance_calculation', log_level=rospy.INFO)
     bridge = CvBridge()
-    
+    try:
+        main()
+    except KeyboardInterrupt:
+        rospy.signal_shutdown('ROS stopped')    
     rospy.Subscriber('/zed/zed_node/depth/depth_registered', Image, getImageDepth)
     subscriberObjectDetection()
     
@@ -139,4 +142,7 @@ def main():
         rospy.loginfo('distance_calculation node terminated')
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        rospy.signal_shutdown('ROS stopped')    
