@@ -27,6 +27,7 @@ CLASSES = [
 ]
 
 start_time = None
+model = None
 
 class InferenceConfig(Config):
     NAME = 'inference'
@@ -48,6 +49,7 @@ class InferenceConfig(Config):
 def sendImageCalculationData(objects_detected):
     """ Use pyZMQ to send a message to a python 2 script for
     obtaining the distances from the objects detected.  """
+    global model
     print('Sending data for distance calculation...')
     
     context = zmq.Context()
@@ -60,21 +62,21 @@ def sendImageCalculationData(objects_detected):
 
     try:
         socket.send_multipart([pickle.dumps(objects_detected, protocol=2)])
-        print('Data sent!')
+        print('Data sent!\n\n')
     except pickle.PicklingError as e:
         print('Error: {}'.format(e))
         sys.exit(1)
 
 def getObjectsDetected(data):
     global start_time
+    global model
 
     if start_time == None:
         start_time = time.time()
+    elif time.time() - start_time > 15:
+        start_time = time.time()
     else:
-        if time.time() - start_time > 10:
-            start_time = time.time()
-        else:
-            return
+        return    
 
     print('Starting object detection...')
 
@@ -88,11 +90,13 @@ def getObjectsDetected(data):
     inference_config = InferenceConfig()
     # Modify max dimension from the image obtained
     inference_config.IMAGE_MAX_DIM = data.width if data.width > data.height else data.height
-    # Initialise model and load weights
-    model = modellib.MaskRCNN(mode="inference",
-                              config=inference_config,
-                              model_dir=os.path.join(ROOT_DIR, 'logs'))
-    model.load_weights(MODEL_DIR, by_name=True)
+    # Initialise model and load weights if it is not initialised yet
+    if model is None:
+        model = modellib.MaskRCNN(mode="inference",
+                                config=inference_config,
+                                model_dir=os.path.join(ROOT_DIR, 'logs'))
+        model.load_weights(MODEL_DIR, by_name=True)
+    
     # Get predictions
     try:
         results = model.detect([rgb_image], verbose=1)
@@ -101,6 +105,8 @@ def getObjectsDetected(data):
         sys.exit(1)
     
     r = results[0]
+    #visualize.display_instances(rgb_image, r['rois'], r['masks'], r['class_ids'], 
+    #                            CLASSES, r['scores'], figsize=(10,10))
     count_classes = len(r['class_ids']) # Count classes
     if count_classes == 0:
         print('No objects found. Increase min confidence if there is an object.')
@@ -108,7 +114,7 @@ def getObjectsDetected(data):
     
     print('Objects found: {}'.format(count_classes))
     # Create an object with a dictionary of the objects detected
-    objects_detected = None # Change back to {} if doesn't work
+    objects_detected = {} # Change back to {} if doesn't work
     for idx in range(count_classes):
         obj_info = dict()
         obj_info['name'] = CLASSES[r['class_ids'][idx]] 
@@ -120,7 +126,9 @@ def getObjectsDetected(data):
 def main():
     rospy.init_node('object_detection', log_level=rospy.INFO)
     print('Taking photo for object detection...')
+    #rate = rospy.Rate(50)
     rospy.Subscriber('/zed/zed_node/rgb_raw/image_raw_color', Image, getObjectsDetected)
+    #rate.sleep()
     rospy.spin()
 
 if __name__ == '__main__':
