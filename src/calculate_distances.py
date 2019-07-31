@@ -19,23 +19,23 @@ from zmq.eventloop import ioloop, zmqstream
 
 bridge = None
 objects_detected = None
-small_tupper = 0.045
+small_tupper = 0.045 # Meters
 
 def getDistanceFromCenter(data, depth_array, u, v):
     cam_to_table = 1.04
     
-    v_middle_width = data.width / 2
-    print data.width, v_middle_width
-    dist_center = depth_array[u, v_middle_width]
-    mid_point_to_center = math.sqrt(dist_center**2 - cam_to_table**2)
+    # v_middle_width = data.width / 2
+    # print data.width, v_middle_width
+    # dist_center = depth_array[u, v_middle_width]
+    # mid_point_to_center = math.sqrt(dist_center**2 - cam_to_table**2)
     
-    dist_object = depth_array[u, v]
-    cam_to_object = cam_to_table - small_tupper
-    obj_to_center = math.sqrt(dist_object**2 - cam_to_object**2)
-    print 'Mid point to center - ', mid_point_to_center
+    # dist_object = depth_array[u, v]
+    # cam_to_object = cam_to_table - small_tupper
+    # obj_to_center = math.sqrt(dist_object**2 - cam_to_object**2)
+    # print 'Mid point to center - ', mid_point_to_center
     
-    dist_center_to_object = math.sqrt(obj_to_center**2 - mid_point_to_center**2)
-    print 'Distance object to center: {}'.format(dist_center_to_object)
+    # dist_center_to_object = math.sqrt(obj_to_center**2 - mid_point_to_center**2)
+    # print 'Distance object to center: {}'.format(dist_center_to_object)
     
     ## try to move baxter
     # moveit_commander.roscpp_initialize(sys.argv)
@@ -86,7 +86,8 @@ def getImageDepth(data):
     for obj_idx in range(count_obj_detected):
         obj_detected = objects_detected[str(obj_idx)]
         name = obj_detected['name']
-        coordinates = obj_detected['coordinates']                
+        coordinates = obj_detected['coordinates'] 
+        print coordinates               
         # Calculate u (height) and v (width)
         # Coordinates = [y1, x1, y2, x2]
         u = ((coordinates[2] - coordinates[0]) / 2) + coordinates[0]
@@ -129,10 +130,7 @@ def main():
     
     rospy.init_node('distance_calculation', log_level=rospy.INFO)
     bridge = CvBridge()
-    try:
-        main()
-    except KeyboardInterrupt:
-        rospy.signal_shutdown('ROS stopped')    
+      
     rospy.Subscriber('/zed/zed_node/depth/depth_registered', Image, getImageDepth)
     subscriberObjectDetection()
     
@@ -145,4 +143,5 @@ if __name__ == '__main__':
     try:
         main()
     except KeyboardInterrupt:
-        rospy.signal_shutdown('ROS stopped')    
+        rospy.signal_shutdown('ROS stopped') 
+        print('Done')   

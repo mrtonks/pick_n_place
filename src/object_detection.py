@@ -36,7 +36,7 @@ class InferenceConfig(Config):
 
     IMAGE_MIN_DIM = 512
     IMAGE_MAX_DIM = 512
-    DETECTION_MIN_CONFIDENCE = 0.99
+    DETECTION_MIN_CONFIDENCE = 0.97
     NUM_CLASSES = 11
     BACKBONE = 'resnet50'
     
@@ -78,7 +78,7 @@ def getObjectsDetected(data):
     else:
         return    
 
-    print('Starting object detection...')
+    print('\nStarting object detection...')
 
     # Image is BGRA8
     image = PILImg.frombytes(mode='RGBA', size=(data.width, data.height), data=data.data, decoder_name='raw')
@@ -105,6 +105,7 @@ def getObjectsDetected(data):
         sys.exit(1)
     
     r = results[0]
+    # Uncomment for visualisation of images with masks
     visualize.display_instances(rgb_image, r['rois'], r['masks'], r['class_ids'], 
                                CLASSES, r['scores'], figsize=(10,10))
     count_classes = len(r['class_ids']) # Count classes
@@ -117,9 +118,6 @@ def getObjectsDetected(data):
     objects_detected = {} # Change back to {} if doesn't work
     for idx in range(count_classes):
         obj_info = dict()
-        print(CLASSES)
-        print(r['class_ids'])
-        print(r['class_ids'][idx])
         obj_info['name'] = CLASSES[r['class_ids'][idx]] 
         obj_info['coordinates'] = [value for value in r['rois'][idx]]
         objects_detected[str(idx)] = obj_info
@@ -142,5 +140,7 @@ if __name__ == '__main__':
     try:
         main()
     except KeyboardInterrupt:
-        rospy.signal_shutdown('ROS stopped')        
+        rospy.signal_shutdown('ROS stopped')
+        model = None
+        print('Done')     
     
