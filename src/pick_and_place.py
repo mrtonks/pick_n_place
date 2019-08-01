@@ -9,6 +9,7 @@ import json
 import math
 import numpy as np
 from sensor_msgs.msg import Image
+from std_msgs.msg import Bool
 from cv_bridge import CvBridge, CvBridgeError
 from zmq.eventloop import ioloop, zmqstream
 
@@ -16,41 +17,44 @@ import move_arm
 
 # Constants
 OBJECTS = {
+    'black_trainer': 0.14,
+    'highland_water': 0.21,
     'small_tupper': 0.045, # Meters
-    'black_trainer': 0.14
 }
 TABLE_BAXTER = {
     'upper_left': {'x': 1.100307662, 'y': 0.446151068025},
-    'lower_left': {'x': 0.476049213024, 'y': 0.464392788864},
-    'upper_right': {'x': 1.005513915, 'y': -0.604036611297},
-    'lower_right': {'x':  0.38459808171, 'y': -0.542247604291}
+    'lower_left': {'x': 0.488212791458, 'y': 0.484441748807},
+    'upper_right': {'x': 1.07260257605, 'y': -0.560748453554},
+    'lower_right': {'x':  0.436149979162, 'y': -0.528152945648}
 }
+# Calibrate manually if camera is moved
 TABLE_IMAGE = {
-    'upper_left': {'x': 412.71, 'y': 249.341},
-    'lower_left': {'x': 328.839, 'y': 576.437},
-    'upper_right': {'x': 961.226, 'y': 266.115},
-    'lower_right': {'x': 1035.03, 'y': 594.889}
+    'upper_left': {'x': 427.806, 'y': 267.792},
+    'lower_left': {'x': 343.935, 'y': 589.857},
+    'upper_right': {'x': 961.226, 'y': 286.244},
+    'lower_right': {'x': 1043.42, 'y': 606.631}
 }
 
 Z_TABLE_BAXTER = -0.20 # Could be different, but grip hits on -0.20
-Z_GRIP_DEPTH = 0.03 # 3 cms for the grip depth
+Z_GRIP_DEPTH = 0.02 # 3 cms for the grip depth
 
 # Global variables
 bridge = None
 objects_detected = None
+limb = 'right'
 
 
 def calculateObjPose(obj_to_pick, u, v):
     """ Calculate the object pose.
 
     Params:
-    - obj_to_pick = Name of the object to pick up and move
-    - u = height in pixels (x coordinate wrt Baxter)
-    - v = width in pixels (y coordinate wrt Baxter)
+    obj_to_pick = Name of the object to pick and move,
+    u = height in pixels (x coordinate wrt Baxter),
+    v = width in pixels (y coordinate wrt Baxter),
 
     Return:
-    - x_baxter = Coordinate x wrt Baxter
-    - y_baxter = Coordinate y wrt Baxter
+    x_baxter = Coordinate x wrt Baxter,
+    y_baxter = Coordinate y wrt Baxter,
     """
 
     x_baxter = 0
@@ -99,9 +103,10 @@ def receiveObjectsDetected(data):
         print 'Error: {}'.format(e)
         sys.exit(1)
 
-def getImageDepth(data):
+def moveObject(data):
     global bridge
     global objects_detected
+    global limb
 
     if objects_detected is None:
         return
@@ -124,14 +129,13 @@ def getImageDepth(data):
     for obj_idx in range(count_obj_detected):
         obj_detected = objects_detected[str(obj_idx)]
         name = obj_detected['name']
-        coordinates = obj_detected['coordinates'] 
-        print coordinates               
+        coordinates = obj_detected['coordinates']              
         # Calculate u (height) and v (width)
         # Coordinates = [y1, x1, y2, x2]
         u = ((coordinates[2] - coordinates[0]) / 2) + coordinates[0]
         v = ((coordinates[3] - coordinates[1]) / 2) + coordinates[1]
         # Obtain distance
-        dist = depth_array[u, v]                
+        dist = depth_array[u, v] # 720x1280               
         obj_distances[obj_idx] = dist
         obj_names[obj_idx] = name
         obj_u[obj_idx] = u
@@ -141,9 +145,13 @@ def getImageDepth(data):
     print 'Objects detected: {}'.format(', '.join(obj_names))          
     print 'Closest object: {} - {} m\n\n'.format(obj_names[closest_obj], obj_distances[closest_obj])            
     #getDistanceFromCenter(data, depth_array, obj_u[closest_obj], obj_v[closest_obj])
-    
-    calculateObjPose()
-    
+    if 0.3 < obj_distances[closest_obj] < 1.5:
+        x, y, z = calculateObjPose(obj_names[closest_obj], obj_u[closest_obj], obj_v[closest_obj])
+        # Publish that Baxter is about to move
+        is_moving_pub.publish(True)
+        move_arm.initplannode([x, y, z], limb)
+        is_moving_pub.publish(False)
+        
     objects_detected = None
 
 def subscriberObjectDetection():
@@ -163,24 +171,16 @@ def subscriberObjectDetection():
         print('\nListener has stopped')     
 
 
-def main():
-    global bridge
-    global objects_detected
-    
-    rospy.init_node('distance_calculation', log_level=rospy.INFO)
+if __name__ == '__main__':
+    rospy.init_node('pick_and_place', log_level=rospy.INFO)
     bridge = CvBridge()
-      
-    rospy.Subscriber('/zed/zed_node/depth/depth_registered', Image, getImageDepth)
-    subscriberObjectDetection()
+    
+    is_moving_pub = rospy.Publisher("is_moving", Bool, queue_size=10)
+    is_moving_pub.publish(False)  
+    rospy.Subscriber('/zed/zed_node/depth/depth_registered', Image, moveObject)
+    subscriberObjectDetection()    
     
     try:
         rospy.spin()
     except rospy.ROSInterruptException:
         rospy.loginfo('distance_calculation node terminated')
-
-if __name__ == '__main__':
-    try:
-        main()
-    except KeyboardInterrupt:
-        rospy.signal_shutdown('ROS stopped') 
-        print('Done')   

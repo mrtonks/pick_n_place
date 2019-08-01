@@ -6,6 +6,7 @@ import copy
 
 # rospy - ROS Python API
 import rospy
+sys.path.append('/home/jesusvera/ros_ws/src/baxter_interface/src')
 import baxter_interface
 
 from baxter_core_msgs.srv import (
@@ -130,6 +131,7 @@ class PickAndPlace(object):
 
     # rostopic echo -n 1 /robot/joint_states
     def pick(self, pose):
+        self._gripper.calibrate()
         # open the gripper
         self.gripper_open()
         # servo above pose
@@ -152,28 +154,28 @@ class PickAndPlace(object):
         self._retract()
 
 def initplannode(goal, limb):
-    rospy.init_node("planning_node")
     # Limb = 'right'
     hover_distance = 0.15 # meters
     # Start position
-    starting_joint_angles = {'right_w0': 3.0504135967740122,
-                             'right_w1': -0.8109176937839067,
-                             'right_w2': 2.6935388551620534,
-                             'right_e0': -0.012537762734409874,
-                             'right_e1': 2.0758228731051833,
-                             'right_s0': 0.28086350234632906,
-                             'right_s1': -1.3852461282141109}
+    starting_joint_angles = {'right_w0': -0.4843544337748194,
+                             'right_w1': 1.3694613483847031,
+                             'right_w2': -0.044485442848677,
+                             'right_e0': 1.3602574636573905,
+                             'right_e1': 1.7303303287347467,
+                             'right_s0': -0.7558690332305377,
+                             'right_s1': -1.153553552489831,}
     pnp =  PickAndPlace(limb, hover_distance)
     overhead_orientation = Quaternion(
-        x = 0.0147500446928,
-        y = 0.998939783418,
-        z = -0.0395300159478,
-        w = 0.0184152959542
+        x = -0.0191702838632, #0.0196942511383,
+        y = 0.999594993792, #0.999129134147,
+        z = -0.021030322154, #-0.0314185879279,
+        w = -0.000272308981523 #-0.0191306587435
     )
 
     object_pose = (Pose(
-        position=Point(x = goal['x'], y = goal['y'], z = goal['z']),
+        position=Point(x = goal[0], y = goal[1], z = goal[2]),
         orientation=overhead_orientation))
+    print object_pose
     # block_poses.append(Pose(
     #     position=Point(x = 0.38459808171, y = -0.542247604291, z = -0.20678082182),
     #     orientation=overhead_orientation)

@@ -9,13 +9,12 @@ import pickle
 import numpy as np
 from PIL import Image as PILImg
 from sensor_msgs.msg import Image
-
+from std_msgs.msg import Bool
 ROOT_DIR = os.path.abspath("../Mask_RCNN/") # Root directory of the project
 sys.path.append(ROOT_DIR) # To find local version of the library
 
-from mrcnn import utils
 import mrcnn.model as modellib
-from mrcnn import visualize
+from mrcnn import utils, visualize
 from mrcnn.config import Config
 
 MODEL_DIR = os.path.join(ROOT_DIR, "logs/cocosynth_dataset20190724T0156/mask_rcnn_cocosynth_dataset_0300.h5") # Path to weights
@@ -26,8 +25,9 @@ CLASSES = [
     'highland_water', 'catbus', 'snapback_hat', 'unstable_unicorns'
 ]
 
-start_time = None
+is_moving = False
 model = None
+start_time = None
 
 class InferenceConfig(Config):
     NAME = 'inference'
@@ -36,7 +36,7 @@ class InferenceConfig(Config):
 
     IMAGE_MIN_DIM = 512
     IMAGE_MAX_DIM = 512
-    DETECTION_MIN_CONFIDENCE = 0.97
+    DETECTION_MIN_CONFIDENCE = 0.99
     NUM_CLASSES = 11
     BACKBONE = 'resnet50'
     
@@ -45,6 +45,10 @@ class InferenceConfig(Config):
     MAX_GT_INSTANCES = 50 
     POST_NMS_ROIS_INFERENCE = 500 
     POST_NMS_ROIS_TRAINING = 1000 
+
+def check_moving(data):
+    global is_moving
+    is_moving = data.data
 
 def sendImageCalculationData(objects_detected):
     """ Use pyZMQ to send a message to a python 2 script for
@@ -70,6 +74,9 @@ def sendImageCalculationData(objects_detected):
 def getObjectsDetected(data):
     global start_time
     global model
+    
+    while is_moving:
+        pass
 
     if start_time == None:
         start_time = time.time()
@@ -128,8 +135,10 @@ def main():
     rospy.init_node('object_detection', log_level=rospy.INFO)
     print('Taking photo for object detection...')
 
+    # roslaunch zed_wrapper zed.launch
+    rate = rospy.Rate(50)
     rospy.Subscriber('/zed/zed_node/rgb_raw/image_raw_color', Image, getObjectsDetected)
-    #rate = rospy.Rate(50)
+    rospy.Subscriber("is_moving", Bool, check_moving)
     try:                
         #rate.sleep()
         rospy.spin()
