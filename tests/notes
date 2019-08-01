@@ -1,5 +1,33 @@
 rostopic echo -n 1 /robot/limb/left/endpoint_state
 
+rosservice call /ExternalTools/right/PositionKinematicsNode/IKService "pose_stamp:
+- header:
+    seq: 0
+    stamp: now
+    frame_id: 'base'
+  pose:
+    position: 
+      x: 0.509930093377
+      y: -0.530288446217
+      z: 0.0179884167319
+    orientation: 
+      x: 0.0147500446928
+      y: 0.998939783418
+      z: -0.0395300159478
+      w: 0.0184152959542
+seed_angles:
+- header: auto
+  name: ['right_e0', 'right_e1', 'left_s0', 'left_s1', 'left_w0', 'left_w1', 'left_w2']
+  position: [0.4371845240478516, 1.8419274289489747, 0.4981602602966309, -1.3483691110107423, -0.11850001572875977, 1.18768462366333, -0.002300971179199219]
+seed_mode: 0"
+
+name: [head_pan, l_gripper_l_finger_joint, l_gripper_r_finger_joint, left_e0, left_e1, left_s0,
+  left_s1, left_w0, left_w1, left_w2, r_gripper_l_finger_joint, r_gripper_r_finger_joint,
+  right_e0, right_e1, right_s0, right_s1, right_w0, right_w1, right_w2]
+position: [2.1674040633357095e-06, -3.7233747068538687e-08, -0.020833005066670053, 0.03218202863241082, 0.500204762724838, 0.1924802032853412, 1.0470000720366048, -0.1670033651313787, 0.026118330802724188, -0.012122216988306178, 0.020833124836032915, -0.020805259555415886, -0.012537762734409874, 2.0758228731051833, 0.28086350234632906, -1.3852461282141109, 3.0504135967740122, -0.8109176937839067, 2.6935388551620534]
+
+
+
 HOME Right Arm
 header: 
   seq: 197729
@@ -228,6 +256,7 @@ wrench:
 
 
 Table
+# Exchange x and y?
 UPPER RIGHT: x=961.226, y=266.115
 LOWER RIGHT: x=1035.03, y=594.889
 UPPER LEFT: x=412.71, y=249.341

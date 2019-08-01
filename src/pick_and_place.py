@@ -12,44 +12,82 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 from zmq.eventloop import ioloop, zmqstream
 
-#import moveit_commander
-#import moveit_msgs.msg
-#import geometry_msgs.msg
+import move_arm
 
+# Constants
+OBJECTS = {
+    'small_tupper': 0.045, # Meters
+    'black_trainer': 0.14
+}
+TABLE_BAXTER = {
+    'upper_left': {'x': 1.100307662, 'y': 0.446151068025},
+    'lower_left': {'x': 0.476049213024, 'y': 0.464392788864},
+    'upper_right': {'x': 1.005513915, 'y': -0.604036611297},
+    'lower_right': {'x':  0.38459808171, 'y': -0.542247604291}
+}
+TABLE_IMAGE = {
+    'upper_left': {'x': 412.71, 'y': 249.341},
+    'lower_left': {'x': 328.839, 'y': 576.437},
+    'upper_right': {'x': 961.226, 'y': 266.115},
+    'lower_right': {'x': 1035.03, 'y': 594.889}
+}
 
+Z_TABLE_BAXTER = -0.20 # Could be different, but grip hits on -0.20
+Z_GRIP_DEPTH = 0.03 # 3 cms for the grip depth
+
+# Global variables
 bridge = None
 objects_detected = None
-small_tupper = 0.045 # Meters
 
-def getDistanceFromCenter(data, depth_array, u, v):
-    cam_to_table = 1.04
-    
-    # v_middle_width = data.width / 2
-    # print data.width, v_middle_width
-    # dist_center = depth_array[u, v_middle_width]
-    # mid_point_to_center = math.sqrt(dist_center**2 - cam_to_table**2)
-    
-    # dist_object = depth_array[u, v]
-    # cam_to_object = cam_to_table - small_tupper
-    # obj_to_center = math.sqrt(dist_object**2 - cam_to_object**2)
-    # print 'Mid point to center - ', mid_point_to_center
-    
-    # dist_center_to_object = math.sqrt(obj_to_center**2 - mid_point_to_center**2)
-    # print 'Distance object to center: {}'.format(dist_center_to_object)
-    
-    ## try to move baxter
-    # moveit_commander.roscpp_initialize(sys.argv)
-    # rospy.init_node('move_group_python_interface_tutorial', anonymous=True)
-    # robot = moveit_commander.RobotCommander()
-    # scene = moveit_commander.PlanningSceneInterface()
-    # group = moveit_commander.MoveGroupCommander("left_arm")
-    # display_trajectory_publisher = rospy.Publisher(
-    #                                 '/move_group/display_planned_path',
-    #                                 moveit_msgs.msg.DisplayTrajectory)
-    # print "============ Waiting for RVIZ..."
-    # rospy.sleep(10)
-    # print "============ Starting tutorial "
-    
+
+def calculateObjPose(obj_to_pick, u, v):
+    """ Calculate the object pose.
+
+    Params:
+    - obj_to_pick = Name of the object to pick up and move
+    - u = height in pixels (x coordinate wrt Baxter)
+    - v = width in pixels (y coordinate wrt Baxter)
+
+    Return:
+    - x_baxter = Coordinate x wrt Baxter
+    - y_baxter = Coordinate y wrt Baxter
+    """
+
+    x_baxter = 0
+    y_baxter = 0
+    z_baxter = 0
+
+    if obj_to_pick is None:
+        print 'No object to pick. Check objects_detected.'
+        return
+    elif obj_to_pick not in OBJECTS:
+        print 'The object to pick is not registered. Check OBJECTS.'
+        return
+    else:
+        z_baxter = Z_TABLE_BAXTER + OBJECTS[obj_to_pick] + Z_GRIP_DEPTH    
+
+    # Obtain table width wrt Baxter (should be meters?)
+    table_width_bx = abs(TABLE_BAXTER['lower_left']['y']) + abs(TABLE_BAXTER['lower_right']['y'])
+    # Obtain table width wrt image
+    table_width_px = TABLE_IMAGE['lower_right']['x'] - TABLE_IMAGE['lower_left']['x']
+    # Obtain v wrt to the table in the image
+    v_wrt_table_px = v - TABLE_IMAGE['lower_left']['x']
+    # Apply three simple rule and substract from y positive value
+    y_baxter = (v_wrt_table_px * table_width_bx / table_width_px) \
+        - TABLE_BAXTER['lower_left']['y']
+
+    # Obtain table height wrt Baxter (should be meters?)
+    table_height_bx = TABLE_BAXTER['upper_left']['x'] - TABLE_BAXTER['lower_left']['x']
+    # Obtain table height wrt image
+    table_height_px = TABLE_IMAGE['lower_left']['y'] - TABLE_IMAGE['upper_left']['y']
+    # Obtain u wrt to the table in the image
+    u_wrt_table_px = u - TABLE_IMAGE['upper_left']['y']
+    # Apply three simple rule and substract from y positive value
+    x_baxter = TABLE_BAXTER['upper_left']['x'] \
+        - (u_wrt_table_px * table_height_bx / table_height_px)
+
+    return x_baxter, y_baxter, z_baxter
+
 
 def receiveObjectsDetected(data):
     global objects_detected
@@ -104,6 +142,7 @@ def getImageDepth(data):
     print 'Closest object: {} - {} m\n\n'.format(obj_names[closest_obj], obj_distances[closest_obj])            
     #getDistanceFromCenter(data, depth_array, obj_u[closest_obj], obj_v[closest_obj])
     
+    calculateObjPose()
     
     objects_detected = None
 
