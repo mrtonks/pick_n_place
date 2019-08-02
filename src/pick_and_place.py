@@ -17,26 +17,31 @@ import move_arm
 
 # Constants
 OBJECTS = {
-    'black_trainer': 0.14,
-    'highland_water': 0.21,
-    'small_tupper': 0.045, # Meters
-}
-TABLE_BAXTER = {
-    'upper_left': {'x': 1.100307662, 'y': 0.446151068025},
-    'lower_left': {'x': 0.488212791458, 'y': 0.484441748807},
-    'upper_right': {'x': 1.07260257605, 'y': -0.560748453554},
-    'lower_right': {'x':  0.436149979162, 'y': -0.528152945648}
-}
-# Calibrate manually if camera is moved
-TABLE_IMAGE = {
-    'upper_left': {'x': 427.806, 'y': 267.792},
-    'lower_left': {'x': 343.935, 'y': 589.857},
-    'upper_right': {'x': 961.226, 'y': 286.244},
-    'lower_right': {'x': 1043.42, 'y': 606.631}
+    'black_trainer': 0.10,
+    'highland_water': 0.04,
+    'harrogate_water': 0.04,
+    'katana_umbrella': 0.05,
+    'small_tupper': 0.045,
 }
 
-Z_TABLE_BAXTER = -0.20 # Could be different, but grip hits on -0.20
-Z_GRIP_DEPTH = 0.02 # 3 cms for the grip depth
+TABLE_BAXTER = {
+    'upper_left': {'x': 1.100307662, 'y': 0.446151068025},
+    'lower_left': {'x': 0.488212791458, 'y': 0.487833555787},
+    'upper_right': {'x': 1.07260257605, 'y': -0.560748453554},
+    'lower_right': {'x':  0.436149979162, 'y': -0.515481924476}
+}
+# Calibrate manually if camera is moved
+# From right camera
+TABLE_IMAGE = {
+    'upper_left': {'x': 397.613, 'y': 244.308},
+    'lower_left': {'x': 300.323, 'y': 563.018},
+    'upper_right': {'x': 939.419, 'y': 266.115},
+    'lower_right': {'x': 1001.48, 'y': 596.566}
+}
+Z_TABLE_BAXTER = -0.20 # obj_detectedCould be different, but grip hits on -0.20
+Z_GRIP_DEPTH = 0.04 # 4 cms for the grip depth
+X_OFFSET = 0.03
+Y_OFFSET = 0.03
 
 # Global variables
 bridge = None
@@ -68,27 +73,41 @@ def calculateObjPose(obj_to_pick, u, v):
         print 'The object to pick is not registered. Check OBJECTS.'
         return
     else:
-        z_baxter = Z_TABLE_BAXTER + OBJECTS[obj_to_pick] + Z_GRIP_DEPTH    
+        z_baxter = Z_TABLE_BAXTER + OBJECTS[obj_to_pick] - Z_GRIP_DEPTH    
 
     # Obtain table width wrt Baxter (should be meters?)
-    table_width_bx = abs(TABLE_BAXTER['lower_left']['y']) + abs(TABLE_BAXTER['lower_right']['y'])
+    #table_width_bx = abs(TABLE_BAXTER['lower_left']['y']) + abs(TABLE_BAXTER['lower_right']['y'])
     # Obtain table width wrt image
-    table_width_px = TABLE_IMAGE['lower_right']['x'] - TABLE_IMAGE['lower_left']['x']
+    #table_width_px = TABLE_IMAGE['lower_right']['x'] - TABLE_IMAGE['lower_left']['x']
     # Obtain v wrt to the table in the image
-    v_wrt_table_px = v - TABLE_IMAGE['lower_left']['x']
+    #v_wrt_table_px = v - TABLE_IMAGE['lower_left']['x']
+    image_width_ctr = 1280 / 2        
+    if v < image_width_ctr:
+        image_fixed = image_width_ctr - TABLE_IMAGE['lower_left']['x']
+        v_fixed = image_width_ctr - v
+        y_baxter = ((v_fixed * TABLE_BAXTER['lower_left']['y']) / image_fixed) - Y_OFFSET
+        #- TABLE_BAXTER['lower_left']['y'] 
+    else:
+        image_fixed = TABLE_IMAGE['lower_right']['x'] - image_width_ctr 
+        v_fixed = v - image_width_ctr
+        y_baxter = ((v_fixed * TABLE_BAXTER['lower_right']['y']) / image_fixed) - Y_OFFSET 
+        #- TABLE_BAXTER['lower_left']['y'] #+ Y_OFFSET
+        
     # Apply three simple rule and substract from y positive value
-    y_baxter = (v_wrt_table_px * table_width_bx / table_width_px) \
-        - TABLE_BAXTER['lower_left']['y']
+    
+    # y_baxter = (v_wrt_table_px * table_width_bx / table_width_px) \
+    #     - TABLE_BAXTER['lower_left']['y']
 
     # Obtain table height wrt Baxter (should be meters?)
-    table_height_bx = TABLE_BAXTER['upper_left']['x'] - TABLE_BAXTER['lower_left']['x']
+    table_height_bx = TABLE_BAXTER['upper_left']['x'] #- TABLE_BAXTER['lower_left']['x']
     # Obtain table height wrt image
-    table_height_px = TABLE_IMAGE['lower_left']['y'] - TABLE_IMAGE['upper_left']['y']
+    table_height_px = TABLE_IMAGE['upper_left']['y']
+    #table_height_px = TABLE_IMAGE['lower_left']['y'] - TABLE_IMAGE['upper_left']['y']
     # Obtain u wrt to the table in the image
-    u_wrt_table_px = u - TABLE_IMAGE['upper_left']['y']
+    #u_wrt_table_px = u - TABLE_IMAGE['upper_left']['y']
     # Apply three simple rule and substract from y positive value
-    x_baxter = TABLE_BAXTER['upper_left']['x'] \
-        - (u_wrt_table_px * table_height_bx / table_height_px)
+    x_baxter = ((table_height_bx * table_height_px) / u) - X_OFFSET
+    #x_baxter = (u_wrt_table_px * table_height_bx * table_height_px)
 
     return x_baxter, y_baxter, z_baxter
 
@@ -126,10 +145,12 @@ def moveObject(data):
     obj_names = np.empty((count_obj_detected), dtype="S20")
     obj_u = np.empty_like(obj_distances)
     obj_v = np.empty_like(obj_distances)
+    x_px = np.empty_like(obj_distances)
     for obj_idx in range(count_obj_detected):
         obj_detected = objects_detected[str(obj_idx)]
         name = obj_detected['name']
-        coordinates = obj_detected['coordinates']              
+        coordinates = obj_detected['coordinates']       
+        print coordinates       
         # Calculate u (height) and v (width)
         # Coordinates = [y1, x1, y2, x2]
         u = ((coordinates[2] - coordinates[0]) / 2) + coordinates[0]
@@ -139,7 +160,8 @@ def moveObject(data):
         obj_distances[obj_idx] = dist
         obj_names[obj_idx] = name
         obj_u[obj_idx] = u
-        obj_v[obj_idx] = v            
+        obj_v[obj_idx] = v  
+        x_px[obj_idx] = coordinates[1]
     # Get index from closet object
     closest_obj = np.argmin(obj_distances)  
     print 'Objects detected: {}'.format(', '.join(obj_names))          
@@ -149,9 +171,9 @@ def moveObject(data):
         x, y, z = calculateObjPose(obj_names[closest_obj], obj_u[closest_obj], obj_v[closest_obj])
         # Publish that Baxter is about to move
         is_moving_pub.publish(True)
-        move_arm.initplannode([x, y, z], limb)
-        is_moving_pub.publish(False)
+        move_arm.initplannode([x, y, z], limb)        
         
+    is_moving_pub.publish(False)
     objects_detected = None
 
 def subscriberObjectDetection():
@@ -176,9 +198,9 @@ if __name__ == '__main__':
     bridge = CvBridge()
     
     is_moving_pub = rospy.Publisher("is_moving", Bool, queue_size=10)
-    is_moving_pub.publish(False)  
     rospy.Subscriber('/zed/zed_node/depth/depth_registered', Image, moveObject)
-    subscriberObjectDetection()    
+    subscriberObjectDetection()     
+    is_moving_pub.publish(False)
     
     try:
         rospy.spin()

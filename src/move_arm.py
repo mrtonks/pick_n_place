@@ -154,7 +154,9 @@ class PickAndPlace(object):
         self._retract()
 
 def initplannode(goal, limb):
-    # Limb = 'right'
+    #if __name__ == '__main__':
+    #rospy.init_node('move_arm')
+    limb = 'right'
     hover_distance = 0.15 # meters
     # Start position
     starting_joint_angles = {'right_w0': -0.4843544337748194,
@@ -176,16 +178,15 @@ def initplannode(goal, limb):
         position=Point(x = goal[0], y = goal[1], z = goal[2]),
         orientation=overhead_orientation))
     print object_pose
-    # block_poses.append(Pose(
-    #     position=Point(x = 0.38459808171, y = -0.542247604291, z = -0.20678082182),
-    #     orientation=overhead_orientation)
-    # )
-    # block_poses.append(Pose(
-    #     position=Point(x = 1.005513915, y = -0.604036611297, z = -0.18191294902),
-    #     orientation=overhead_orientation)
-    # )
+    #block_poses = []
+    #block_poses.append(Pose(
+    #    position=Point(x = 0.781733325536, y = -0.057134352156, z = -0.0157025346295),
+    #    orientation=overhead_orientation)
+    #)
+    
     # Move to the desired starting angles
     pnp.move_to_start(starting_joint_angles)  
     print 'Picking...'
     pnp.pick(object_pose)
+    pnp.move_to_start(starting_joint_angles)
     return

@@ -54,6 +54,7 @@ def sendImageCalculationData(objects_detected):
     """ Use pyZMQ to send a message to a python 2 script for
     obtaining the distances from the objects detected.  """
     global model
+    global is_moving
     print('Sending data for distance calculation...')
     
     context = zmq.Context()
@@ -66,6 +67,7 @@ def sendImageCalculationData(objects_detected):
 
     try:
         socket.send_multipart([pickle.dumps(objects_detected, protocol=2)])
+        is_moving = True
         print('Data sent!\n\n')
     except pickle.PicklingError as e:
         print('Error: {}'.format(e))
@@ -85,8 +87,7 @@ def getObjectsDetected(data):
     else:
         return    
 
-    print('\nStarting object detection...')
-
+    print('\nStarting object detection...')    
     # Image is BGRA8
     image = PILImg.frombytes(mode='RGBA', size=(data.width, data.height), data=data.data, decoder_name='raw')
     # Convert to numpy array
@@ -136,8 +137,8 @@ def main():
     print('Taking photo for object detection...')
 
     # roslaunch zed_wrapper zed.launch
-    rate = rospy.Rate(50)
-    rospy.Subscriber('/zed/zed_node/rgb_raw/image_raw_color', Image, getObjectsDetected)
+    # rate = rospy.Rate(50)
+    rospy.Subscriber('/zed/zed_node/right_raw/image_raw_color', Image, getObjectsDetected)
     rospy.Subscriber("is_moving", Bool, check_moving)
     try:                
         #rate.sleep()
