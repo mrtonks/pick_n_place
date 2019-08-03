@@ -30,6 +30,7 @@ model = None
 start_time = None
 
 class InferenceConfig(Config):
+    """ Configuration class for the inference """
     NAME = 'inference'
     GPU_COUNT = 1
     IMAGES_PER_GPU = 1
@@ -55,8 +56,8 @@ def sendImageCalculationData(objects_detected):
     obtaining the distances from the objects detected.  """
     global model
     global is_moving
+
     print('Sending data for distance calculation...')
-    
     context = zmq.Context()
     socket = context.socket(zmq.PUB)
     addr = '127.0.0.1'  # remote ip or localhost
@@ -73,20 +74,26 @@ def sendImageCalculationData(objects_detected):
         print('Error: {}'.format(e))
         sys.exit(1)
 
-def getObjectsDetected(data):
+def getRawPhoto():
+    rospy.wait_for_service('get_raw_photo')
+    try:
+        get_raw_photo = rospy.ServiceProxy('get_raw_photo', Image)
+        return get_raw_photo()
+    except rospy.ServiceException as e:
+        rospy.logerr('Service call failed: {}'.format(e))
+        return None
+
+def getObjectsDetected():
     global start_time
     global model
     
     while is_moving:
         pass
 
-    if start_time == None:
-        start_time = time.time()
-    elif time.time() - start_time > 15:
-        start_time = time.time()
-    else:
-        return    
-
+    data = getRawPhoto()
+    while data is None:
+        return
+    
     print('\nStarting object detection...')    
     # Image is BGRA8
     image = PILImg.frombytes(mode='RGBA', size=(data.width, data.height), data=data.data, decoder_name='raw')
@@ -120,7 +127,7 @@ def getObjectsDetected(data):
     if count_classes == 0:
         print('No objects found. Decrease min confidence if there is an object.')
         return
-    
+
     print('Objects found: {}'.format(count_classes))
     # Create an object with a dictionary of the objects detected
     objects_detected = {} # Change back to {} if doesn't work
@@ -137,15 +144,15 @@ def main():
     print('Taking photo for object detection...')
 
     # roslaunch zed_wrapper zed.launch
-    # rate = rospy.Rate(50)
-    rospy.Subscriber('/zed/zed_node/right_raw/image_raw_color', Image, getObjectsDetected)
-    rospy.Subscriber("is_moving", Bool, check_moving)
-    try:                
-        #rate.sleep()
-        rospy.spin()
-    except rospy.ROSInterruptException:
-        rospy.signal_shutdown('ROS stopped')
+    #rospy.Subscriber('/zed/zed_node/right_raw/image_raw_color', Image, getObjectsDetected)
+    rospy.Subscriber('is_moving', Bool, check_moving, queue_size=10)
+    while True:
+        getObjectsDetected()
+        print('\nWaiting...')
+        time.sleep(10)
 
+    rospy.spin()
+    
 if __name__ == '__main__':
     try:
         main()
