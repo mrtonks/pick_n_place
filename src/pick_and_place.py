@@ -7,13 +7,13 @@ import pickle
 import json
 import math
 import tf
-import move_arm
 import numpy as np
 from sensor_msgs.msg import Image
 from std_msgs.msg import Bool
 from cv_bridge import CvBridge, CvBridgeError
 from zmq.eventloop import ioloop, zmqstream
 from .helpers import const
+from .helpers import move_arm
 
 # Global variables
 bridge = None
@@ -70,18 +70,23 @@ def calculateObjPose(obj_to_pick, u, v):
 
 
 def receiveObjectsDetected(data):
-    """Receive the objects detected
+    """
+    Receive the objects detected
+    
     Params:
     :param data: ``Image`` data type from ``sensor_msgs`` 
     """
     global objects_detected
+    image_depth = None
 
     print 'Receiving objects detected...'
     try:
         objects_detected = pickle.loads(data[0])
         if objects_detected:
-            image_depth = rospy.wait_for_message('/zed/zed_node/depth/depth_registered', Image)
-            moveObject(objects_detected, image_depth)
+            while image_depth is None:
+                image_depth = rospy.wait_for_message('/zed/zed_node/depth/depth_registered', Image)
+                if image_depth:
+                    moveObject(objects_detected, image_depth)
     except pickle.PickleError as e:
         rospy.logerr('Error: {}'.format(e))
 
@@ -147,19 +152,18 @@ def subscriberObjectDetection():
     try:
         ioloop.IOLoop.instance().start()
     except KeyboardInterrupt:
-        print('\nListener has stopped')     
+        print('Listener has stopped')     
 
 
 if __name__ == '__main__':
     rospy.init_node('pick_and_place', log_level=rospy.INFO)
     bridge = CvBridge()
     
-    is_moving_pub = rospy.Publisher("is_moving", Bool, queue_size=10)
-    #rospy.Subscriber('/zed/zed_node/depth/depth_registered', Image, moveObject)
-    subscriberObjectDetection()     
-    is_moving_pub.publish(False)
-    
     try:
+        is_moving_pub = rospy.Publisher("is_moving", Bool, queue_size=10)
+        #rospy.Subscriber('/zed/zed_node/depth/depth_registered', Image, moveObject)
+        subscriberObjectDetection()     
+        is_moving_pub.publish(False)
         rospy.spin()
-    except rospy.ROSInterruptException:
-        rospy.loginfo('distance_calculation node terminated')
+    except (KeyboardInterrupt, rospy.ROSInterruptException):
+        rospy.loginfo('pick_and_place node terminated')

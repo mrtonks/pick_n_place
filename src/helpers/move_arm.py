@@ -6,7 +6,7 @@ import copy
 
 # rospy - ROS Python API
 import rospy
-sys.path.append('/home/jesusvera/ros_ws/src/baxter_interface/src')
+#sys.path.append('/home/jesusvera/ros_ws/src/baxter_interface/src')
 import baxter_interface
 
 from baxter_core_msgs.srv import (

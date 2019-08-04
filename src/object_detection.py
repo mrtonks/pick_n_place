@@ -106,7 +106,9 @@ def getObjectsDetected():
     while is_moving:
         pass
 
-    data = getRawPhoto()
+    # Check what works, service or wait for message once
+    # data = getRawPhoto()
+    data = rospy.wait_for_message('/zed/zed_node/right_raw/image_raw_color', Image)
     while data is None:
         return
     
@@ -151,7 +153,6 @@ def getObjectsDetected():
         obj_info['name'] = const.CLASSES[r['class_ids'][idx]] 
         obj_info['coordinates'] = [value for value in r['rois'][idx]]
         objects_detected[str(idx)] = obj_info
-
     sendImageCalculationData(objects_detected)
 
 if __name__ == '__main__':
@@ -159,14 +160,16 @@ if __name__ == '__main__':
     print('Taking photo for object detection...')
 
     # roslaunch zed_wrapper zed.launch
-    #rospy.Subscriber('/zed/zed_node/right_raw/image_raw_color', Image, getObjectsDetected)
-    rospy.Subscriber('is_moving', Bool, check_moving, queue_size=10)
-    while True:
-        getObjectsDetected()
-        print('Waiting...')
-        time.sleep(10)
-
-    rospy.spin()
-    model = None
-    print('Done')     
+    # might need to run roscore
+    # rospy.Subscriber('/zed/zed_node/right_raw/image_raw_color', Image, getObjectsDetected)
+    try:
+        rospy.Subscriber('is_moving', Bool, check_moving, queue_size=10)
+        while not is_moving:
+            getObjectsDetected()
+            print('Waiting...')
+            rospy.sleep(15.0)
+        rospy.spin()
+    except (KeyboardInterrupt, rospy.ROSInterruptException):
+        model = None
+        rospy.loginfo('object_detection node terminated')    
     
