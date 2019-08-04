@@ -10,6 +10,8 @@ import numpy as np
 from PIL import Image as PILImg
 from sensor_msgs.msg import Image
 from std_msgs.msg import Bool
+from .helpers import const
+
 ROOT_DIR = os.path.abspath("../Mask_RCNN/") # Root directory of the project
 sys.path.append(ROOT_DIR) # To find local version of the library
 
@@ -18,19 +20,18 @@ from mrcnn import utils, visualize
 from mrcnn.config import Config
 
 MODEL_DIR = os.path.join(ROOT_DIR, "logs/cocosynth_dataset20190724T0156/mask_rcnn_cocosynth_dataset_0300.h5") # Path to weights
-# Classes as contained in the coco definitions file
-CLASSES = [ 
-    'BG', 'cat_cup', 'black_trainer', 'small_tupper',
-    'katana_umbrella', 'harrogate_water', 'feet_spray',
-    'highland_water', 'catbus', 'snapback_hat', 'unstable_unicorns'
-]
 
 is_moving = False
 model = None
 start_time = None
 
 class InferenceConfig(Config):
-    """ Configuration class for the inference """
+    """
+    Configuration class for the inference.
+    
+    Params:
+    :param Config: ``Config`` from ``mrcnn.config``
+    """
     NAME = 'inference'
     GPU_COUNT = 1
     IMAGES_PER_GPU = 1
@@ -48,23 +49,34 @@ class InferenceConfig(Config):
     POST_NMS_ROIS_TRAINING = 1000 
 
 def check_moving(data):
+    """
+    Checks if object is being moved.
+
+    Params:
+    :param data: ``boolean``
+    """
     global is_moving
     is_moving = data.data
 
 def sendImageCalculationData(objects_detected):
-    """ Use pyZMQ to send a message to a python 2 script for
-    obtaining the distances from the objects detected.  """
+    """
+    Use ZMQ to send a message to a python 2 script for
+    obtaining the distances from the objects detected.
+
+    Params:
+    :param objects_detected: ``JSON`` object containing the class and 
+    coordinates of the bounding box.
+    """
     global model
     global is_moving
 
     print('Sending data for distance calculation...')
     context = zmq.Context()
     socket = context.socket(zmq.PUB)
-    addr = '127.0.0.1'  # remote ip or localhost
-    port = '5556'  # same as in the pupil remote gui
+    addr = '127.0.0.1'  # Remote ip or localhost
+    port = '5556'  # Same as in the pupil remote gui
     socket.bind('tcp://{}:{}'.format(addr, port))
-    # Making sure the socket is up
-    time.sleep(1.0)
+    time.sleep(1.0) # Making sure the socket is up
 
     try:
         socket.send_multipart([pickle.dumps(objects_detected, protocol=2)])
@@ -75,6 +87,9 @@ def sendImageCalculationData(objects_detected):
         sys.exit(1)
 
 def getRawPhoto():
+    """
+    Get a raw photo from the ``get_raw_photo`` service.
+    """
     rospy.wait_for_service('get_raw_photo')
     try:
         get_raw_photo = rospy.ServiceProxy('get_raw_photo', Image)
@@ -84,6 +99,7 @@ def getRawPhoto():
         return None
 
 def getObjectsDetected():
+    """Detects objects in the image."""
     global start_time
     global model
     
@@ -94,16 +110,14 @@ def getObjectsDetected():
     while data is None:
         return
     
-    print('\nStarting object detection...')    
+    print('Starting object detection...')    
     # Image is BGRA8
     image = PILImg.frombytes(mode='RGBA', size=(data.width, data.height), data=data.data, decoder_name='raw')
-    # Convert to numpy array
-    img_array = np.array(image)
-    # Convert to RGBA and remove alpha channel
-    rgb_image = img_array[:, :, [2, 1, 0]]
+    img_array = np.array(image) # Convert to numpy array
+    rgb_image = img_array[:, :, [2, 1, 0]] # Convert to RGBA and remove alpha channel
 
     inference_config = InferenceConfig()
-    # Modify max dimension from the image obtained
+    # Modify max dimension according to the image obtained
     inference_config.IMAGE_MAX_DIM = data.width if data.width > data.height else data.height
     # Initialise model and load weights if it is not initialised yet
     if model is None:
@@ -115,14 +129,15 @@ def getObjectsDetected():
     # Get predictions
     try:
         results = model.detect([rgb_image], verbose=1)
-    except Exception as e:
-        print('Error: ', e)
-        sys.exit(1)
+    except (KeyboardInterrupt, Exception) as e:
+        print('Error: {}'.format(e))
+        model = None
+        sys.exit()
     
     r = results[0]
     # Uncomment for visualisation of images with masks
     visualize.display_instances(rgb_image, r['rois'], r['masks'], r['class_ids'], 
-                               CLASSES, r['scores'], figsize=(10,10))
+                               const.CLASSES, r['scores'], figsize=(10,10))
     count_classes = len(r['class_ids']) # Count classes
     if count_classes == 0:
         print('No objects found. Decrease min confidence if there is an object.')
@@ -133,13 +148,13 @@ def getObjectsDetected():
     objects_detected = {} # Change back to {} if doesn't work
     for idx in range(count_classes):
         obj_info = dict()
-        obj_info['name'] = CLASSES[r['class_ids'][idx]] 
+        obj_info['name'] = const.CLASSES[r['class_ids'][idx]] 
         obj_info['coordinates'] = [value for value in r['rois'][idx]]
         objects_detected[str(idx)] = obj_info
 
     sendImageCalculationData(objects_detected)
 
-def main():
+if __name__ == '__main__':
     rospy.init_node('object_detection', log_level=rospy.INFO)
     print('Taking photo for object detection...')
 
@@ -148,16 +163,10 @@ def main():
     rospy.Subscriber('is_moving', Bool, check_moving, queue_size=10)
     while True:
         getObjectsDetected()
-        print('\nWaiting...')
+        print('Waiting...')
         time.sleep(10)
 
     rospy.spin()
-    
-if __name__ == '__main__':
-    try:
-        main()
-    except KeyboardInterrupt:
-        rospy.signal_shutdown('ROS stopped')
-        model = None
-        print('Done')     
+    model = None
+    print('Done')     
     
