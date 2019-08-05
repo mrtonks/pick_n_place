@@ -18,7 +18,6 @@ from helpers import move_arm
 # Global variables
 bridge = None
 objects_detected = None
-limb = 'right'
 
 
 def calculateObjPose(obj_to_pick, u, v):
@@ -42,10 +41,10 @@ def calculateObjPose(obj_to_pick, u, v):
 
     if obj_to_pick is None:
         print 'No object to pick. Check objects_detected.'
-        return
+        return 0, 0, 0
     elif obj_to_pick not in const.OBJECTS:
         print 'The object to pick is not registered. Check OBJECTS.'
-        return
+        return 0, 0, 0
     else:
         z_baxter = const.Z_TABLE_BAXTER + const.OBJECTS[obj_to_pick] - const.Z_GRIP_DEPTH    
 
@@ -77,23 +76,20 @@ def receiveObjectsDetected(data):
     :param data: ``Image`` data type from ``sensor_msgs`` 
     """
     global objects_detected
-    image_depth = None
 
     print 'Receiving objects detected...'
     try:
-        objects_detected = pickle.loads(data[0])
-        if objects_detected:
-            while image_depth is None:
-                image_depth = rospy.wait_for_message('/zed/zed_node/depth/depth_registered', Image)
-                if image_depth:
-                    moveObject(objects_detected, image_depth)
+        objects_detected = pickle.loads(data[0])        
     except pickle.PickleError as e:
         rospy.logerr('Error: {}'.format(e))
+    if objects_detected:
+        image_depth = rospy.wait_for_message('/zed/zed_node/depth/depth_registered', Image)
+        moveObject(objects_detected, image_depth)
+    
 
 def moveObject(obj_detected, image):
     global bridge
     global objects_detected
-    global limb
 
     if objects_detected is None:
         return
@@ -104,7 +100,7 @@ def moveObject(obj_detected, image):
         print 'Error: {}'.format(e)
 
     depth_array = np.array(image_cv2, dtype=np.float32)
-    print('Image size: {}x{}'.format(image.width, image.height))
+    print 'Image size: {}x{}'.format(image.width, image.height)
     count_obj_detected = len(objects_detected)
     # Create numpy arrays for distances and names
     obj_distances = np.zeros((count_obj_detected))
@@ -115,7 +111,7 @@ def moveObject(obj_detected, image):
         obj_detected = objects_detected[str(obj_idx)]
         name = obj_detected['name']
         coordinates = obj_detected['coordinates']       
-        print coordinates       
+        # print coordinates       
         # Calculate u (height) and v (width)
         # Coordinates = [y1, x1, y2, x2]
         u = ((coordinates[2] - coordinates[0]) / 2) + coordinates[0] # y - height
@@ -131,9 +127,11 @@ def moveObject(obj_detected, image):
     # Check if object is less than 0.5 m closer or more 1.5 m further
     if 0.5 < obj_distances[closest_obj] < 1.5:
         x, y, z = calculateObjPose(obj_names[closest_obj], obj_u_v[closest_obj, 0], obj_u_v[closest_obj, 1])
-        is_moving_pub.publish(True) # Publish that Baxter is about to move
-        move_arm.initplannode([x, y, z], limb) # Start moving    
-        is_moving_pub.publish(False) # Publish that Baxter is not moving anymore 
+        if x <> 0 or y <> 0 or z <> 0:
+            is_moving_pub.publish(True) # Publish that Baxter is about to move
+            move_arm.initplannode([x, y, z], const.LIMB) # Start moving  
+    else:
+        print 'Closest object is out of pick up distance.'              
     
     is_moving_pub.publish(False) # Publish that Baxter is not moving anymore
     objects_detected = None

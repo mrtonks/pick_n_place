@@ -18,7 +18,13 @@ from geometry_msgs.msg import (
     Pose, 
     Point
 )
-from const import *
+from const import (
+    HOVER_DISTANCE,
+    LIMB,
+    OVERHEAD_ORIENTATION,
+    START_JOINT_ANGLES,
+    Y_PLACING
+)
 
 # From ik_pick_and_place_demo.py
 # First run: rosrun baxter_interface joint_trajectory_action_server.py
@@ -150,24 +156,31 @@ class PickAndPlace(object):
 
 def initplannode(goal, limb):
     #if __name__ == '__main__':
-    #rospy.init_node('move_arm')
-    limb = 'right'
-    hover_distance = 0.15 # meters  
-    pnp =  PickAndPlace(limb, hover_distance)
-    object_pose = (Pose(
+    #rospy.init_node('move_arm')   
+    pnp =  PickAndPlace(limb, HOVER_DISTANCE)
+    object_poses = []
+    # Object pose
+    object_poses.append(Pose(
         position=Point(x = goal[0], y = goal[1], z = goal[2]),
         orientation=OVERHEAD_ORIENTATION))
-    print object_pose
-    #block_poses = []
-    #block_poses.append(Pose(
-    #    position=Point(x = 0.781733325536, y = -0.057134352156, z = -0.0157025346295),
-    #    orientation=overhead_orientation)
-    #)
-    
-    # Move to the desired starting angles
-    pnp.move_to_start(START_JOINT_ANGLES)  
-    print 'Picking...'
-    pnp.pick(object_pose)
-    print 'Returning...'
-    pnp.move_to_start(START_JOINT_ANGLES)
+    # Place the object 0.15 m to left or right, depending on the side
+    if goal[1] < 0:
+        goal[1] = goal[1] + Y_PLACING
+    else:
+        goal[1] = goal[1] - Y_PLACING
+    object_poses.append(Pose(
+        position=Point(x = goal[0], y = goal[1], z = goal[2]),
+        orientation=OVERHEAD_ORIENTATION))
+
+    try:
+        # Move to the desired starting angles
+        pnp.move_to_start(START_JOINT_ANGLES)  
+        print 'Picking...'
+        pnp.pick(object_poses[0])
+        print 'Placing...'
+        pnp.place(object_poses[1])
+        print 'Returning...'
+        pnp.move_to_start(START_JOINT_ANGLES)
+    except (Exception, KeyboardInterrupt) as e:
+        rospy.logerr('Error: {}'.format(e))
     return

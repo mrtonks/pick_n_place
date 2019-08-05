@@ -38,7 +38,7 @@ class InferenceConfig(Config):
 
     IMAGE_MIN_DIM = 512
     IMAGE_MAX_DIM = 512
-    DETECTION_MIN_CONFIDENCE = 0.99
+    DETECTION_MIN_CONFIDENCE = 0.95
     NUM_CLASSES = 11
     BACKBONE = 'resnet50'
 
@@ -85,18 +85,6 @@ def sendImageCalculationData(objects_detected):
     except pickle.PicklingError as e:
         print('Error: {}'.format(e))
         sys.exit(1)
-
-# def getRawPhoto():
-#     """
-#     Get a raw photo from the ``get_raw_photo`` service.
-#     """
-#     rospy.wait_for_service('get_raw_photo')
-#     try:
-#         get_raw_photo = rospy.ServiceProxy('get_raw_photo', Image)
-#         return get_raw_photo()
-#     except rospy.ServiceException as e:
-#         rospy.logerr('Service call failed: {}'.format(e))
-#         return None
 
 def getObjectsDetected():
     """Detects objects in the image."""

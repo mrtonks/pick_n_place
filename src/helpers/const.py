@@ -5,30 +5,40 @@ from geometry_msgs.msg import Quaternion
 # BG = background
 CLASSES = [ 
     'BG', 'cat_cup', 'black_trainer', 'small_tupper',
-    'katana_umbrella', 'harrogate_water', 'feet_spray',
+    'katana_umbrella', 'harr4ogate_water', 'feet_spray',
     'highland_water', 'catbus', 'snapback_hat', 'unstable_unicorns'
 ]
+HOVER_DISTANCE = 0.15 # mete4rs 
 IMAGE_WIDTH = 1280
 IMAGE_HEIGHT = 720
+LIMB = 'right'  
 # Object heigth in meters
 OBJECTS = {
-    'black_trainer': 0.10,
-    'catbus': 0.08,
-    'cat_cup': 0, # TODO
+    'black_trainer': 0.08,
+    'catbus': 0.05,
+    'cat_cup': 0.10, # TODO
     'feet_spray': 0.04,
     'harrogate_water': 0.04,
     'highland_water': 0.04,
     'katana_umbrella': 0.05,
     'small_tupper': 0.045,
-    'snapback_hat': 0, # TODO
-    'unstable_unicorns': 0 #TODO
+    'snapback_hat': 0.10, # TODO
+    'unstable_unicorns': 0.1
 }
+# This quaternions work great. (176, 0, -179)
 OVERHEAD_ORIENTATION = Quaternion(
-        x = -0.0191702838632, #0.0196942511383,
-        y = 0.999594993792, #0.999129134147,
-        z = -0.021030322154, #-0.0314185879279,
-        w = -0.000272308981523 #-0.0191306587435
-    )
+    x = 0.00786117417644,
+    y = 0.999878111508, 
+    z = -0.0125115456827,
+    w = -0.00504234997407,
+)
+OVERHEAD_ORIENTATION_START = Quaternion(
+    x = -0.00337619259824,
+    y = 0.99983167818,
+    z = -0.0166998965825,
+    w = 0.00680662077238
+)
+OVERHEAD_ORIENTATION_ANGLES = [176, 0, 177]
 # Starting position from grip
 START_JOINT_ANGLES = {
     'right_w0': -0.4843544337748194,
@@ -43,20 +53,21 @@ START_JOINT_ANGLES = {
 # Calibrate manually if baxter or table is moved
 # Use "rostopic echo -n 1 /robot/"limb"/endpoint_state"
 TABLE_BAXTER = {
-    'upper_left': {'x': 1.09642979904, 'y': 0.438461289226},
-    'lower_left': {'x': 0.504807367142, 'y': 0.472920127847},
-    'upper_right': {'x': 1.02984346343, 'y': -0.56524698834},
-    'lower_right': {'x':  0.436149979162, 'y': -0.515481924476}
+    'upper_left': {'x': 1.08376362735, 'y': 0.467429998229},
+    'lower_left': {'x': 0.444348149295, 'y': 0.477504802962},
+    'upper_right': {'x': 1.01795889999, 'y': -0.562818766745},
+    'lower_right': {'x':  0.398211437682, 'y': -0.520174310791}
 }
 # Table's corners' coordinates from the image in pixels
 # Calibrate manually if camera is moved, from right camera
 TABLE_IMAGE = {
-    'upper_left': {'x': 394.581, 'y': 134.488},
-    'lower_left': {'x': 308.71, 'y': 449.214},
-    'upper_right': {'x': 956.194, 'y': 161.326},
-    'lower_right': {'x': 996.452, 'y': 487.794}
+    'upper_left': {'x': 360.71, 'y': 300.686},
+    'lower_left': {'x': 276.839, 'y': 644.557},
+    'upper_right': {'x': 914.258, 'y': 302.364},
+    'lower_right': {'x': 999.806, 'y': 637.848}
 }
 X_OFFSET = 0.0 # Can be changed according to needs. Roughly estimation (meters)
-Y_OFFSET = 0.03
+Y_OFFSET = 0.05
+Y_PLACING = 0.25
 Z_TABLE_BAXTER = -0.20 # Could be different, but grip hits table on -0.20
 Z_GRIP_DEPTH = 0.04 # 4 cms for the grip depth
