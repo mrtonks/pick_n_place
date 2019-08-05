@@ -10,7 +10,7 @@ import numpy as np
 from PIL import Image as PILImg
 from sensor_msgs.msg import Image
 from std_msgs.msg import Bool
-from .helpers import const
+from helpers import const
 
 ROOT_DIR = os.path.abspath("../Mask_RCNN/") # Root directory of the project
 sys.path.append(ROOT_DIR) # To find local version of the library

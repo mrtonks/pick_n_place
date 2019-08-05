@@ -3,27 +3,22 @@
 import sys
 import struct
 import copy
-
 # rospy - ROS Python API
 import rospy
 #sys.path.append('/home/jesusvera/ros_ws/src/baxter_interface/src')
 import baxter_interface
-
 from baxter_core_msgs.srv import (
     SolvePositionIK,
     SolvePositionIKRequest
 )
-
 from std_msgs.msg import Header
-
 from sensor_msgs.msg import JointState
-
 from geometry_msgs.msg import (
     PoseStamped,
     Pose, 
-    Point,
-    Quaternion
+    Point
 )
+from const import *
 
 # From ik_pick_and_place_demo.py
 # First run: rosrun baxter_interface joint_trajectory_action_server.py
@@ -157,26 +152,11 @@ def initplannode(goal, limb):
     #if __name__ == '__main__':
     #rospy.init_node('move_arm')
     limb = 'right'
-    hover_distance = 0.15 # meters
-    # Start position
-    starting_joint_angles = {'right_w0': -0.4843544337748194,
-                             'right_w1': 1.3694613483847031,
-                             'right_w2': -0.044485442848677,
-                             'right_e0': 1.3602574636573905,
-                             'right_e1': 1.7303303287347467,
-                             'right_s0': -0.7558690332305377,
-                             'right_s1': -1.153553552489831,}
+    hover_distance = 0.15 # meters  
     pnp =  PickAndPlace(limb, hover_distance)
-    overhead_orientation = Quaternion(
-        x = -0.0191702838632, #0.0196942511383,
-        y = 0.999594993792, #0.999129134147,
-        z = -0.021030322154, #-0.0314185879279,
-        w = -0.000272308981523 #-0.0191306587435
-    )
-
     object_pose = (Pose(
         position=Point(x = goal[0], y = goal[1], z = goal[2]),
-        orientation=overhead_orientation))
+        orientation=OVERHEAD_ORIENTATION))
     print object_pose
     #block_poses = []
     #block_poses.append(Pose(
@@ -185,8 +165,9 @@ def initplannode(goal, limb):
     #)
     
     # Move to the desired starting angles
-    pnp.move_to_start(starting_joint_angles)  
+    pnp.move_to_start(START_JOINT_ANGLES)  
     print 'Picking...'
     pnp.pick(object_pose)
-    pnp.move_to_start(starting_joint_angles)
+    print 'Returning...'
+    pnp.move_to_start(START_JOINT_ANGLES)
     return
