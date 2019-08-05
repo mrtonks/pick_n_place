@@ -10,7 +10,7 @@ import numpy as np
 from PIL import Image as PILImg
 from sensor_msgs.msg import Image
 from std_msgs.msg import Bool
-from .helpers import const
+from helpers import const
 
 ROOT_DIR = os.path.abspath("../Mask_RCNN/") # Root directory of the project
 sys.path.append(ROOT_DIR) # To find local version of the library
@@ -41,12 +41,12 @@ class InferenceConfig(Config):
     DETECTION_MIN_CONFIDENCE = 0.99
     NUM_CLASSES = 11
     BACKBONE = 'resnet50'
-    
+
     RPN_ANCHOR_SCALES = (8, 16, 32, 64, 128)
     TRAIN_ROIS_PER_IMAGE = 32
-    MAX_GT_INSTANCES = 50 
-    POST_NMS_ROIS_INFERENCE = 500 
-    POST_NMS_ROIS_TRAINING = 1000 
+    MAX_GT_INSTANCES = 50
+    POST_NMS_ROIS_INFERENCE = 500
+    POST_NMS_ROIS_TRAINING = 1000
 
 def check_moving(data):
     """
@@ -81,22 +81,22 @@ def sendImageCalculationData(objects_detected):
     try:
         socket.send_multipart([pickle.dumps(objects_detected, protocol=2)])
         is_moving = True
-        print('Data sent!\n\n')
+        print('Data sent!\n')
     except pickle.PicklingError as e:
         print('Error: {}'.format(e))
         sys.exit(1)
 
-def getRawPhoto():
-    """
-    Get a raw photo from the ``get_raw_photo`` service.
-    """
-    rospy.wait_for_service('get_raw_photo')
-    try:
-        get_raw_photo = rospy.ServiceProxy('get_raw_photo', Image)
-        return get_raw_photo()
-    except rospy.ServiceException as e:
-        rospy.logerr('Service call failed: {}'.format(e))
-        return None
+# def getRawPhoto():
+#     """
+#     Get a raw photo from the ``get_raw_photo`` service.
+#     """
+#     rospy.wait_for_service('get_raw_photo')
+#     try:
+#         get_raw_photo = rospy.ServiceProxy('get_raw_photo', Image)
+#         return get_raw_photo()
+#     except rospy.ServiceException as e:
+#         rospy.logerr('Service call failed: {}'.format(e))
+#         return None
 
 def getObjectsDetected():
     """Detects objects in the image."""
@@ -111,8 +111,8 @@ def getObjectsDetected():
     data = rospy.wait_for_message('/zed/zed_node/right_raw/image_raw_color', Image)
     while data is None:
         return
-    
-    print('Starting object detection...')    
+
+    print('\nStarting object detection...')    
     # Image is BGRA8
     image = PILImg.frombytes(mode='RGBA', size=(data.width, data.height), data=data.data, decoder_name='raw')
     img_array = np.array(image) # Convert to numpy array
@@ -131,7 +131,7 @@ def getObjectsDetected():
     # Get predictions
     try:
         results = model.detect([rgb_image], verbose=1)
-    except (KeyboardInterrupt, Exception) as e:
+    except Exception as e:
         print('Error: {}'.format(e))
         model = None
         sys.exit()
@@ -164,10 +164,10 @@ if __name__ == '__main__':
     # rospy.Subscriber('/zed/zed_node/right_raw/image_raw_color', Image, getObjectsDetected)
     try:
         rospy.Subscriber('is_moving', Bool, check_moving, queue_size=10)
-        while not is_moving:
-            getObjectsDetected()
+        while True:            
             print('Waiting...')
-            rospy.sleep(15.0)
+            getObjectsDetected()            
+            #rospy.sleep(15.0)
         rospy.spin()
     except (KeyboardInterrupt, rospy.ROSInterruptException):
         model = None

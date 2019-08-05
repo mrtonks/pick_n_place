@@ -12,8 +12,8 @@ from sensor_msgs.msg import Image
 from std_msgs.msg import Bool
 from cv_bridge import CvBridge, CvBridgeError
 from zmq.eventloop import ioloop, zmqstream
-from .helpers import const
-from .helpers import move_arm
+from helpers import const
+from helpers import move_arm
 
 # Global variables
 bridge = None
@@ -132,7 +132,8 @@ def moveObject(obj_detected, image):
     if 0.5 < obj_distances[closest_obj] < 1.5:
         x, y, z = calculateObjPose(obj_names[closest_obj], obj_u_v[closest_obj, 0], obj_u_v[closest_obj, 1])
         is_moving_pub.publish(True) # Publish that Baxter is about to move
-        move_arm.initplannode([x, y, z], limb) # Start moving     
+        move_arm.initplannode([x, y, z], limb) # Start moving    
+        is_moving_pub.publish(False) # Publish that Baxter is not moving anymore 
     
     is_moving_pub.publish(False) # Publish that Baxter is not moving anymore
     objects_detected = None
