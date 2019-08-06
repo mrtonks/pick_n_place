@@ -3,40 +3,40 @@ from geometry_msgs.msg import Quaternion
 # Classes as contained in the coco definitions file
 # Same order (id number) as in the coco file
 # BG = background
-CLASSES = [ 
+CLASSES = [
     'BG', 'cat_cup', 'black_trainer', 'small_tupper',
     'katana_umbrella', 'harr4ogate_water', 'feet_spray',
     'highland_water', 'catbus', 'snapback_hat', 'unstable_unicorns'
 ]
-HOVER_DISTANCE = 0.15 # mete4rs 
+HOVER_DISTANCE = 0.15  # meters
 IMAGE_WIDTH = 1280
 IMAGE_HEIGHT = 720
-LIMB = 'right'  
+LIMB = 'right'
 # Object heigth in meters
 OBJECTS = {
     'black_trainer': 0.08,
     'catbus': 0.05,
-    'cat_cup': 0.10, # TODO
+    'cat_cup': 0.10,  # TODO
     'feet_spray': 0.04,
     'harrogate_water': 0.04,
     'highland_water': 0.04,
     'katana_umbrella': 0.05,
     'small_tupper': 0.045,
-    'snapback_hat': 0.10, # TODO
+    'snapback_hat': 0.10,  # TODO
     'unstable_unicorns': 0.1
 }
 # This quaternions work great. (176, 0, -179)
 OVERHEAD_ORIENTATION = Quaternion(
-    x = 0.00786117417644,
-    y = 0.999878111508, 
-    z = -0.0125115456827,
-    w = -0.00504234997407,
+    x=0.00786117417644,
+    y=0.999878111508,
+    z=-0.0125115456827,
+    w=-0.00504234997407,
 )
 OVERHEAD_ORIENTATION_START = Quaternion(
-    x = -0.00337619259824,
-    y = 0.99983167818,
-    z = -0.0166998965825,
-    w = 0.00680662077238
+    x=-0.00337619259824,
+    y=0.99983167818,
+    z=-0.0166998965825,
+    w=0.00680662077238
 )
 OVERHEAD_ORIENTATION_ANGLES = [176, 0, 177]
 # Starting position from grip
@@ -66,8 +66,8 @@ TABLE_IMAGE = {
     'upper_right': {'x': 914.258, 'y': 302.364},
     'lower_right': {'x': 999.806, 'y': 637.848}
 }
-X_OFFSET = 0.0 # Can be changed according to needs. Roughly estimation (meters)
+X_OFFSET = 0.0  # Roughly estimation (meters)
 Y_OFFSET = 0.05
 Y_PLACING = 0.25
-Z_TABLE_BAXTER = -0.20 # Could be different, but grip hits table on -0.20
-Z_GRIP_DEPTH = 0.04 # 4 cms for the grip depth
+Z_TABLE_BAXTER = -0.20  # Could be different, but grip hits table on -0.20
+Z_GRIP_DEPTH = 0.04  # 4 cms for the grip depth

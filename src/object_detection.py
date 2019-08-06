@@ -10,7 +10,7 @@ import numpy as np
 from PIL import Image as PILImg
 from sensor_msgs.msg import Image
 from std_msgs.msg import Bool
-from helpers import const
+from helpers import const, find_contour_angle
 
 ROOT_DIR = os.path.abspath("../Mask_RCNN/") # Root directory of the project
 sys.path.append(ROOT_DIR) # To find local version of the library
@@ -135,11 +135,13 @@ def getObjectsDetected():
 
     print('Objects found: {}'.format(count_classes))
     # Create an object with a dictionary of the objects detected
-    objects_detected = {} # Change back to {} if doesn't work
+    objects_detected = {}
     for idx in range(count_classes):
+        masks = r['masks']
         obj_info = dict()
         obj_info['name'] = const.CLASSES[r['class_ids'][idx]] 
-        obj_info['coordinates'] = [value for value in r['rois'][idx]]
+        obj_info['coordinates'] = [value for value in r['rois'][idx]]        
+        obj_info['angle'] = find_contour_angle.getContourAngle(masks[:, :, idx], 'rad')
         objects_detected[str(idx)] = obj_info
     sendImageCalculationData(objects_detected)
 
