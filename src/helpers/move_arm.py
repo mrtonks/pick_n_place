@@ -16,7 +16,8 @@ from sensor_msgs.msg import JointState
 from geometry_msgs.msg import (
     PoseStamped,
     Pose, 
-    Point
+    Point,
+    Quaternion
 )
 from const import (
     HOVER_DISTANCE,
@@ -154,15 +155,22 @@ class PickAndPlace(object):
         # retract to clear object
         self._retract()
 
-def initplannode(goal, limb):
+def initplannode(goal, quat, limb):
     #if __name__ == '__main__':
     #rospy.init_node('move_arm')   
     pnp =  PickAndPlace(limb, HOVER_DISTANCE)
     object_poses = []
     # Object pose
+    # Quaternions may be reversed
+    quaternions = Quaternion(
+        x=quat[3],
+        y=quat[2],
+        z=quat[1],
+        w=quat[0]
+    )
     object_poses.append(Pose(
         position=Point(x = goal[0], y = goal[1], z = goal[2]),
-        orientation=OVERHEAD_ORIENTATION))
+        orientation=quaternions))
     # Place the object 0.15 m to left or right, depending on the side
     if goal[1] < 0:
         goal[1] = goal[1] + Y_PLACING

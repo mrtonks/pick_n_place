@@ -141,7 +141,7 @@ def getObjectsDetected():
         obj_info = dict()
         obj_info['name'] = const.CLASSES[r['class_ids'][idx]] 
         obj_info['coordinates'] = [value for value in r['rois'][idx]]        
-        obj_info['angle'] = find_contour_angle.getContourAngle(masks[:, :, idx], 'rad')
+        obj_info['orientation'] = find_contour_angle.getContourAngle(masks[:, :, idx], 'rad')
         objects_detected[str(idx)] = obj_info
     sendImageCalculationData(objects_detected)
 

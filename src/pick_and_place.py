@@ -6,12 +6,12 @@ import zmq
 import pickle
 import json
 import math
-import tf
 import numpy as np
 from sensor_msgs.msg import Image
 from std_msgs.msg import Bool
 from cv_bridge import CvBridge, CvBridgeError
 from zmq.eventloop import ioloop, zmqstream
+from tf.transformations import quaternion_from_euler
 from helpers import const
 from helpers import move_arm
 
@@ -20,7 +20,7 @@ bridge = None
 objects_detected = None
 
 
-def calculateObjPose(obj_to_pick, u, v):
+def calculateObjPose(obj_to_pick, u, v, orientation):
     """
     Calculate the object pose.
 
@@ -65,7 +65,10 @@ def calculateObjPose(obj_to_pick, u, v):
     table_height_px = const.TABLE_IMAGE['upper_left']['y'] # Obtain table height wrt image
     x_baxter = ((table_height_bx * table_height_px) / u) - const.X_OFFSET # Apply three simple rule 
 
-    return x_baxter, y_baxter, z_baxter
+    # Obtain the orientation
+    quaternions = quaternion_from_euler(0, 0, orientation)
+
+    return x_baxter, y_baxter, z_baxter, quaternions
 
 
 def receiveObjectsDetected(data):
@@ -105,12 +108,13 @@ def moveObject(obj_detected, image):
     # Create numpy arrays for distances and names
     obj_distances = np.zeros((count_obj_detected))
     obj_names = np.empty((count_obj_detected), dtype="S20")
-    obj_u_v = np.zeros((count_obj_detected, 2))
+    obj_coordinates = np.zeros((count_obj_detected, 2))
+    obj_orientation = np.zeros((count_obj_detected))
     #obj_v = np.empty_like(obj_distances)
     for obj_idx in range(count_obj_detected):
         obj_detected = objects_detected[str(obj_idx)]
         name = obj_detected['name']
-        coordinates = obj_detected['coordinates']       
+        coordinates = obj_detected['coordinates']
         # print coordinates       
         # Calculate u (height) and v (width)
         # Coordinates = [y1, x1, y2, x2]
@@ -119,17 +123,18 @@ def moveObject(obj_detected, image):
         dist = depth_array[u, v] # Obtain distance, 720x1280
         obj_distances[obj_idx] = dist
         obj_names[obj_idx] = name
-        obj_u_v[obj_idx, 0] = u
-        obj_u_v[obj_idx, 1] = v
+        obj_coordinates[obj_idx, 0] = u
+        obj_coordinates[obj_idx, 1] = v
+        obj_orientation[obj_idx] = obj_detected['orientation']
     closest_obj = np.argmin(obj_distances) # Get index from closet object  
     print 'Objects detected: {}'.format(', '.join(obj_names))          
-    print 'Closest object: {} - {} m\n\n'.format(obj_names[closest_obj], obj_distances[closest_obj])            
+    print 'Closest object: {} - {} m\n'.format(obj_names[closest_obj], obj_distances[closest_obj])            
     # Check if object is less than 0.5 m closer or more 1.5 m further
     if 0.5 < obj_distances[closest_obj] < 1.5:
-        x, y, z = calculateObjPose(obj_names[closest_obj], obj_u_v[closest_obj, 0], obj_u_v[closest_obj, 1])
+        x, y, z, quaternions = calculateObjPose(obj_names[closest_obj], obj_coordinates[closest_obj, 0], obj_coordinates[closest_obj, 1])
         if x <> 0 or y <> 0 or z <> 0:
             is_moving_pub.publish(True) # Publish that Baxter is about to move
-            move_arm.initplannode([x, y, z], const.LIMB) # Start moving  
+            move_arm.initplannode([x, y, z], quaternions, const.LIMB) # Start moving  
     else:
         print 'Closest object is out of pick up distance.'              
     
