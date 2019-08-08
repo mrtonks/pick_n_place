@@ -131,7 +131,7 @@ class PickAndPlace(object):
         joint_angles = self.ik_request(pose)
         self._guarded_move_to_joint_position(joint_angles)
 
-    # rostopic echo -n 1 /robot/joint_states
+    # rost05opic echo -n 1 /robot/joint_states
     def pick(self, pose):
         self._gripper.calibrate()
         # open the gripper

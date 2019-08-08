@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
 This is "find_contour_angle" module.
 
@@ -7,7 +9,7 @@ The function "getContourAngle" will return the angle from a contour mask.
 
 Found in:
 https://stackoverflow.com/questions/39693869/fitting-an-ellipse-to-a-set-of-data-points-in-python
-    
+
 Original code:
 http://nicky.vanforeest.com/misc/fitEllipse/fitEllipse.html
 """
@@ -60,7 +62,7 @@ def fitEllipse(cont):
     params = [cx, cy, a, b, angle]
     return params
 
-def fitAngle(angle, max_angle=180.0):
+def fitAngle(angle, max_angle=180):
     """
     Return a positive angle fitted to a maximum angle. If negative
     it will return the positive equivalent.
@@ -74,22 +76,28 @@ def fitAngle(angle, max_angle=180.0):
         Maximum angle to fit any angle. 
         Example: -10 is 170, -25 is 155 (max angle 180).
     """
-    return angle % max_angle
+    return int(angle) % max_angle
 
 def getContourAngle(mask, angle_type='deg'):
     """
     Return the angle of a contour.
 
-    Parameters
-    ----------
+    ParametersRETR_TREE
+    ----------RETR_TREE
     masks : 2D array
         2D array of mask values.
     
     angle_type : String
         "rad" for radians or "deg" for degrees.
     """
+    import sys
+    try:
+        sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
+    except:
+        pass        
     import cv2
     import numpy as np
+    from .const import ANGLE_OFFSET
 
     # Mask Polygon
     # Pad to ensure proper polygons for masks that touch image edges.
@@ -100,8 +108,19 @@ def getContourAngle(mask, angle_type='deg'):
     cnt = contours[0]
     # Fits an ellipse to the contours
     params = fitEllipse(cnt.squeeze())
+    
+    # TODO: remove
+    print('Original', params[4])
+    
     # In case of negative angle, get positive equivalent
-    angle = fitAngle(params[4])
+    if params[4] < -1:
+        angle = fitAngle(abs(params[4]))
+    else:
+        angle = fitAngle(params[4])
+    #if 1 < angle < 180:
+    #    angle = angle + ANGLE_OFFSET
+    
+    print('Fitted', angle)
 
     if angle_type == 'rad':
         angle = np.deg2rad(angle)

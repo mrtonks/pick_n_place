@@ -1,5 +1,6 @@
 from geometry_msgs.msg import Quaternion
 
+ANGLE_OFFSET = 90  # Degrees
 # Classes as contained in the coco definitions file
 # Same order (id number) as in the coco file
 # BG = background
@@ -51,23 +52,24 @@ START_JOINT_ANGLES = {
 }
 # Table's corners' coordinates from Baxter's perspective
 # Calibrate manually if baxter or table is moved
-# Use "rostopic echo -n 1 /robot/"limb"/endpoint_state"
+# Use "rostopic echo -n 1 /robot/limb/{limb}/endpoint_state"
 TABLE_BAXTER = {
-    'upper_left': {'x': 1.08376362735, 'y': 0.467429998229},
-    'lower_left': {'x': 0.444348149295, 'y': 0.477504802962},
-    'upper_right': {'x': 1.01795889999, 'y': -0.562818766745},
-    'lower_right': {'x':  0.398211437682, 'y': -0.520174310791}
+    'upper_left': {'x': 1.00603005458, 'y': 0.504066349828},
+    'lower_left': {'x': 0.397406675192, 'y': 0.470629984283},
+    'upper_right': {'x': 1.05914511272, 'y': -0.533782171269},
+    'lower_right': {'x':  0.425963925918, 'y': -0.538421026528}
 }
 # Table's corners' coordinates from the image in pixels
 # Calibrate manually if camera is moved, from right camera
+# Run object_detection.py alone
 TABLE_IMAGE = {
-    'upper_left': {'x': 360.71, 'y': 300.686},
-    'lower_left': {'x': 276.839, 'y': 644.557},
-    'upper_right': {'x': 914.258, 'y': 302.364},
-    'lower_right': {'x': 999.806, 'y': 637.848}
+    'upper_left': {'x': 424.452, 'y': 309.208},
+    'lower_left': {'x': 342.258, 'y': 649.724},
+    'upper_right': {'x': 979.677, 'y': 312.563},
+    'lower_right': {'x': 1066.9, 'y': 656.494}
 }
 X_OFFSET = 0.0  # Roughly estimation (meters)
-Y_OFFSET = 0.05
+Y_OFFSET = -0.05
 Y_PLACING = 0.25
 Z_TABLE_BAXTER = -0.20  # Could be different, but grip hits table on -0.20
 Z_GRIP_DEPTH = 0.04  # 4 cms for the grip depth

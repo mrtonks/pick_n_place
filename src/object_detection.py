@@ -38,7 +38,7 @@ class InferenceConfig(Config):
 
     IMAGE_MIN_DIM = 512
     IMAGE_MAX_DIM = 512
-    DETECTION_MIN_CONFIDENCE = 0.95
+    DETECTION_MIN_CONFIDENCE = 0.97 # Increse if detecting many objects not there
     NUM_CLASSES = 11
     BACKBONE = 'resnet50'
 
@@ -95,7 +95,7 @@ def getObjectsDetected():
         pass
 
     # Check what works, service or wait for message once
-    # data = getRawPhoto()
+    # data = getRawPhoto()    
     data = rospy.wait_for_message('/zed/zed_node/right_raw/image_raw_color', Image)
     while data is None:
         return
@@ -141,7 +141,10 @@ def getObjectsDetected():
         obj_info = dict()
         obj_info['name'] = const.CLASSES[r['class_ids'][idx]] 
         obj_info['coordinates'] = [value for value in r['rois'][idx]]        
-        obj_info['orientation'] = find_contour_angle.getContourAngle(masks[:, :, idx], 'rad')
+        try:
+            obj_info['orientation'] = find_contour_angle.getContourAngle(masks[:, :, idx], 'rad')
+        except Exception:
+            return
         objects_detected[str(idx)] = obj_info
     sendImageCalculationData(objects_detected)
 
@@ -154,10 +157,12 @@ if __name__ == '__main__':
     # rospy.Subscriber('/zed/zed_node/right_raw/image_raw_color', Image, getObjectsDetected)
     try:
         rospy.Subscriber('is_moving', Bool, check_moving, queue_size=10)
-        while True:            
-            print('Waiting...')
-            getObjectsDetected()            
-            #rospy.sleep(15.0)
+        while True:
+            try:                            
+                print('Waiting...')
+                getObjectsDetected()            
+            except KeyboardInterrupt:
+                print('Done')
         rospy.spin()
     except (KeyboardInterrupt, rospy.ROSInterruptException):
         model = None
