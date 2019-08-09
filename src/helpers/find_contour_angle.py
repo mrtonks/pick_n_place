@@ -62,7 +62,7 @@ def fitEllipse(cont):
     params = [cx, cy, a, b, angle]
     return params
 
-def fitAngle(angle, max_angle=180):
+def fitAngle(angle, max_angle=180.0):
     """
     Return a positive angle fitted to a maximum angle. If negative
     it will return the positive equivalent.
@@ -76,9 +76,14 @@ def fitAngle(angle, max_angle=180):
         Maximum angle to fit any angle. 
         Example: -10 is 170, -25 is 155 (max angle 180).
     """
-    return int(angle) % max_angle
+    if angle < 90:
+        new_angle = 180 - (90 - angle)
+    else:
+        new_angle = 180 - angle
+    print("new angle: ", -new_angle)
+    return -new_angle+10
 
-def getContourAngle_2(mask, angle_type='deg'):
+def getContourAnglex(mask, angle_type='deg'):
     """
     Return the angle of a contour.
 
@@ -107,16 +112,21 @@ def getContourAngle_2(mask, angle_type='deg'):
     contours, _ = cv2.findContours(padded_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     cnt = contours[0]
     # Fits an ellipse to the contours
-    params = fitEllipse(cnt.squeeze())
+    params = fitEllipse(cnt.squeeze())     
+    print(params)
+    x, y, w, h, a = params
+
+    angle = (90 - abs(a) if (w < h) else a) + 90
     
+    # print('All params: ', params)
     # TODO: remove
-    print('Original', params[4])
+    # print('Original', params[4])
     
     # In case of negative angle, get positive equivalent
-    if params[4] < -1:
-        angle = fitAngle(abs(params[4]))
-    else:
-        angle = fitAngle(params[4])
+    # if params[4] < -1:
+    #     angle = fitAngle(abs(params[4]))
+    # else:
+    #     angle = fitAngle(params[4])
     #if 1 < angle < 180:
     #    angle = angle + ANGLE_OFFSET
     
@@ -125,7 +135,7 @@ def getContourAngle_2(mask, angle_type='deg'):
     if angle_type == 'rad':
         angle = np.deg2rad(angle)
 
-    return angle
+    return -angle
 
 def getContourAngle(mask, angle_type='deg'):
     """
@@ -137,7 +147,7 @@ def getContourAngle(mask, angle_type='deg'):
         2D array of mask values.
     
     angle_type : String
-        "rad" for radians or "deg" for degrees.
+        "rad" for radia180ns or "deg" for degrees.
     """
     import sys
     try:
@@ -158,10 +168,10 @@ def getContourAngle(mask, angle_type='deg'):
     
     rect = cv2.minAreaRect(cnt)
     (x, y) ,(w, h), a = rect
-
-    angle = 90 - abs(a) if (w < h) else fitAngle(a)
-
+    print(rect)
+    angle = 90 - a if (w < h) else -a
+    print("first angle: ", angle)
     if angle_type == 'rad':
         angle = np.deg2rad(angle)
 
-    return angle
+    return fitAngle(angle)

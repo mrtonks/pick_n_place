@@ -158,15 +158,15 @@ class PickAndPlace(object):
 def initplannode(goal, quat, limb):
     #if __name__ == '__main__':
     #rospy.init_node('move_arm')   
-    pnp =  PickAndPlace(limb, HOVER_DISTANCE)
+    pnp =  PickAndPlace(limb, HOVER_DISTANCE, False)
     object_poses = []
     # Object pose
     # Quaternions may be reversed
     quaternions = Quaternion(
-        x=quat[3],
-        y=quat[2],
-        z=quat[1],
-        w=quat[0]
+        x=quat[0],
+        y=quat[1],
+        z=quat[2],
+        w=quat[3]
     )
     object_poses.append(Pose(
         position=Point(x = goal[0], y = goal[1], z = goal[2]),

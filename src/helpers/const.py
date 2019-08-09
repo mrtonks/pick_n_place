@@ -6,7 +6,7 @@ ANGLE_OFFSET = 90  # Degrees
 # BG = background
 CLASSES = [
     'BG', 'cat_cup', 'black_trainer', 'small_tupper',
-    'katana_umbrella', 'harr4ogate_water', 'feet_spray',
+    'katana_umbrella', 'harrogate_water', 'feet_spray',
     'highland_water', 'catbus', 'snapback_hat', 'unstable_unicorns'
 ]
 HOVER_DISTANCE = 0.15  # meters
@@ -54,22 +54,23 @@ START_JOINT_ANGLES = {
 # Calibrate manually if baxter or table is moved
 # Use "rostopic echo -n 1 /robot/limb/{limb}/endpoint_state"
 TABLE_BAXTER = {
-    'upper_left': {'x': 1.00603005458, 'y': 0.504066349828},
-    'lower_left': {'x': 0.397406675192, 'y': 0.470629984283},
-    'upper_right': {'x': 1.05914511272, 'y': -0.533782171269},
-    'lower_right': {'x':  0.425963925918, 'y': -0.538421026528}
+    'upper_left': {'x': 1.00539650803, 'y': 0.515422346073},
+    'lower_left': {'x': 0.385302617015, 'y': 0.474767834085},
+    'upper_right': {'x': 1.06705514594, 'y': -0.507285249659},
+    'lower_right': {'x':  0.441618955699, 'y': -0.520428725454}
 }
 # Table's corners' coordinates from the image in pixels
 # Calibrate manually if camera is moved, from right camera
 # Run object_detection.py alone
 TABLE_IMAGE = {
-    'upper_left': {'x': 424.452, 'y': 309.208},
+    'upper_left': {'x': 419.419, 'y': 305.995},
     'lower_left': {'x': 342.258, 'y': 649.724},
-    'upper_right': {'x': 979.677, 'y': 312.563},
+    'upper_right': {'x': 972.968, 'y': 299.286},
     'lower_right': {'x': 1066.9, 'y': 656.494}
 }
-X_OFFSET = 0.0  # Roughly estimation (meters)
-Y_OFFSET = -0.05
+X_OFFSET = 0.00  # Roughly estimation (meters)
+Y_OFFSET = 0.06
+Y_OFFSET_RIGHT = 0.0
 Y_PLACING = 0.25
 Z_TABLE_BAXTER = -0.20  # Could be different, but grip hits table on -0.20
 Z_GRIP_DEPTH = 0.04  # 4 cms for the grip depth

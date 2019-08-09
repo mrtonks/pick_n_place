@@ -55,18 +55,21 @@ def calculateObjPose(obj_to_pick, u, v, orientation):
         image_fixed = image_width_mid - const.TABLE_IMAGE['lower_left']['x']
         v_fixed = image_width_mid - v
         # Apply three simple rule to calculate the y coordinate wrt Baxter
-        y_baxter = ((v_fixed * const.TABLE_BAXTER['lower_left']['y']) / image_fixed) - const.Y_OFFSET
+        y_baxter = ((v_fixed * const.TABLE_BAXTER['lower_left']['y']) / image_fixed) + const.Y_OFFSET
+        # Obtain the orientation    
+        quaternions = quaternion_from_euler(-179, 0, orientation)
     else:
         image_fixed = const.TABLE_IMAGE['lower_right']['x'] - image_width_mid
         v_fixed = v - image_width_mid
-        y_baxter = ((v_fixed * const.TABLE_BAXTER['lower_right']['y']) / image_fixed) - const.Y_OFFSET 
+        y_baxter = ((v_fixed * const.TABLE_BAXTER['lower_right']['y']) / image_fixed) + const.Y_OFFSET_RIGHT
+        # Obtain the orientation    
+        quaternions = quaternion_from_euler(-179, 0, orientation)
 
     table_height_bx = const.TABLE_BAXTER['upper_left']['x'] # Obtain table height wrt Baxter
     table_height_px = const.TABLE_IMAGE['upper_left']['y'] # Obtain table height wrt image
-    x_baxter = ((table_height_bx * table_height_px) / u) - const.X_OFFSET # Apply three simple rule 
+    x_baxter = ((table_height_bx * table_height_px) / u) + const.X_OFFSET # Apply three simple rule 
 
-    # Obtain the orientation
-    quaternions = quaternion_from_euler(176, 0, -orientation)
+    
     print 'First quaternions, ', quaternions
     return x_baxter, y_baxter, z_baxter, quaternions
 
@@ -130,14 +133,12 @@ def moveObject(obj_detected, image):
     print 'Objects detected: {}'.format(', '.join(obj_names))          
     print 'Closest object: {} - {} m\n'.format(obj_names[closest_obj], obj_distances[closest_obj])     
     print 'Pose: x: {}, y: {}, angle: {}'.format(obj_coordinates[closest_obj, 0], \
-        obj_coordinates[closest_obj, 1], np.rad2deg(obj_orientation[closest_obj]))       
+        obj_coordinates[closest_obj, 1], obj_orientation[closest_obj])      
     # Check if object is less than 0.5 m closer or more 1.5 m further
     if 0.5 < obj_distances[closest_obj] < 1.5:
         x, y, z, quaternions = calculateObjPose(obj_names[closest_obj], obj_coordinates[closest_obj, 0], \
             obj_coordinates[closest_obj, 1], obj_orientation[closest_obj])
-        if x <> 0 or y <> 0 or z <> 0:
-            print 'Orientation ', obj_orientation[closest_obj]
-            print 'Quaterions ', quaternions
+        if x <> 0 or y <> 0 or z <> 0:            
             is_moving_pub.publish(True) # Publish that Baxter is about to move
             move_arm.initplannode([x, y, z], quaternions, const.LIMB) # Start moving  
     else:

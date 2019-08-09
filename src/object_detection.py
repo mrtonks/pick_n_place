@@ -126,8 +126,8 @@ def getObjectsDetected():
     
     r = results[0]
     # Uncomment for visualisation of images with masks
-    visualize.display_instances(rgb_image, r['rois'], r['masks'], r['class_ids'], 
-                               const.CLASSES, r['scores'], figsize=(10,10))
+    # visualize.display_instances(rgb_image, r['rois'], r['masks'], r['class_ids'], 
+    #                            const.CLASSES, r['scores'], figsize=(10,10))
     count_classes = len(r['class_ids']) # Count classes
     if count_classes == 0:
         print('No objects found. Decrease min confidence if there is an object.')
@@ -142,8 +142,9 @@ def getObjectsDetected():
         obj_info['name'] = const.CLASSES[r['class_ids'][idx]] 
         obj_info['coordinates'] = [value for value in r['rois'][idx]]        
         try:
-            obj_info['orientation'] = find_contour_angle.getContourAngle(masks[:, :, idx], 'rad')
-        except Exception:
+            obj_info['orientation'] = find_contour_angle.getContourAngle(masks[:, :, idx])
+        except Exception as e:
+            print('Error: {}'.format(e))
             return
         objects_detected[str(idx)] = obj_info
     sendImageCalculationData(objects_detected)
@@ -162,7 +163,9 @@ if __name__ == '__main__':
                 print('Waiting...')
                 getObjectsDetected()            
             except KeyboardInterrupt:
-                print('Done')
+                print('Done')                
+                sys.exit('Done')
+                break
         rospy.spin()
     except (KeyboardInterrupt, rospy.ROSInterruptException):
         model = None
