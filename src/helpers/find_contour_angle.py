@@ -78,12 +78,12 @@ def fitAngle(angle, max_angle=180):
     """
     return int(angle) % max_angle
 
-def getContourAngle(mask, angle_type='deg'):
+def getContourAngle_2(mask, angle_type='deg'):
     """
     Return the angle of a contour.
 
-    ParametersRETR_TREE
-    ----------RETR_TREE
+    Parameters
+    ----------
     masks : 2D array
         2D array of mask values.
     
@@ -121,6 +121,45 @@ def getContourAngle(mask, angle_type='deg'):
     #    angle = angle + ANGLE_OFFSET
     
     print('Fitted', angle)
+
+    if angle_type == 'rad':
+        angle = np.deg2rad(angle)
+
+    return angle
+
+def getContourAngle(mask, angle_type='deg'):
+    """
+    Return the angle of a contour.
+
+    Parameters
+    ----------
+    masks : 2D array
+        2D array of mask values.
+    
+    angle_type : String
+        "rad" for radians or "deg" for degrees.
+    """
+    import sys
+    try:
+        sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
+    except:
+        pass        
+    import cv2
+    import numpy as np
+    from .const import ANGLE_OFFSET
+
+    # Mask Polygon
+    # Pad to ensure proper polygons for masks that touch image edges.
+    padded_mask = np.zeros((mask.shape[0] + 2, mask.shape[1] + 2), dtype=np.uint8)
+    padded_mask[1:-1, 1:-1] = mask
+    # Helps to find the contours from the mask
+    contours, _ = cv2.findContours(padded_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    cnt = contours[0]
+    
+    rect = cv2.minAreaRect(cnt)
+    (x, y) ,(w, h), a = rect
+
+    angle = 90 - abs(a) if (w < h) else fitAngle(a)
 
     if angle_type == 'rad':
         angle = np.deg2rad(angle)
