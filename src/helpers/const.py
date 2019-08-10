@@ -18,13 +18,13 @@ LIMB = 'right'
 OBJECTS = {
     'black_trainer': 0.08,
     'catbus': 0.05,
-    'cat_cup': 0.10,  # TODO
+    'cat_cup': 0.10,
     'feet_spray': 0.04,
     'harrogate_water': 0.04,
     'highland_water': 0.04,
     'katana_umbrella': 0.05,
     'small_tupper': 0.045,
-    'snapback_hat': 0.10,  # TODO
+    'snapback_hat': 0.10,
     'unstable_unicorns': 0.1
 }
 # This quaternions work great. (176, 0, -179)
@@ -73,20 +73,28 @@ X_OFFSET = 0.00  # Roughly estimation (meters)
 Y_OFFSET = 0.06
 Y_OFFSET_RIGHT = 0.0
 Y_PLACING = 0.25
-Z_TABLE_BAXTER = -0.20  # Could be different, but grip hits table on -0.20
+Z_TABLE_BAXTER = -0.21  # Could be different, but grip hits table on -0.20
 Z_GRIP_DEPTH = 0.04  # 4 cms for the grip depth
 
 
 # Camera Calibration
+CAMERA_MATRIX = np.array([
+    (723.044309, 0.000000, 472.782029),
+    (0.000000, 705.863044, 310.658635),
+    (0.000000, 0.000000, 1.000000)
+], dtype=np.float32)
+
+DIST_COEFF = np.array([-0.145259, -0.035861, -0.009946, -0.033134, 0.000000], dtype=np.float32)
+
 IMAGE_POINTS = np.array([
-    (419.419, 305.995),  # Upper left
-    (342.258, 649.724),  # Lower left
-    (972.968, 299.286),  # Upper right
-    (1066.9, 656.494)  # Lower right
-], dtype="double")
+    (382.516, 275.24),  # Upper left
+    (305.355, 630.853),  # Lower left
+    (952.839, 278.595),  # Upper right
+    (1033.35, 630.853)  # Lower right
+], dtype=np.float32)
 OBJECT_POINTS = np.array([
-    (1.00539650803, 0.515422346073),  # Upper left, TODO add Z
-    (0.385302617015, 0.474767834085),  # Lower left
-    (1.06705514594, -0.507285249659),  # Upper right
-    (0.441618955699, -0.520428725454)  # Lower right
-])
+    (0.973203478362, 0.53220275843),  # Upper left (X, Y, Z)
+    (0.335471638151, 0.498266287581),  # Lower left
+    (1.00756553233, -0.487021132297),  # Upper right
+    (0.375112755416, -0.499386870421)  # Lower right
+], dtype=np.float32)

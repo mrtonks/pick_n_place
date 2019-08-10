@@ -12,8 +12,7 @@ from std_msgs.msg import Bool
 from cv_bridge import CvBridge, CvBridgeError
 from zmq.eventloop import ioloop, zmqstream
 from tf.transformations import quaternion_from_euler
-from helpers import const
-from helpers import move_arm
+from helpers import const, move_arm, solve_pnp
 
 # Global variables
 bridge = None
@@ -47,31 +46,38 @@ def calculateObjPose(obj_to_pick, u, v, orientation):
         return 0, 0, 0
     else:
         z_baxter = const.Z_TABLE_BAXTER + const.OBJECTS[obj_to_pick] - const.Z_GRIP_DEPTH    
+        
+    # TODO: Delete
+    # ##################################
+    # # Use the width middle point to get y = 0 (coordinate)
+    # # and determine the side of the object according to y (left or right / + or -)
+    # image_width_mid = const.IMAGE_WIDTH / 2        
+    # if v < image_width_mid:
+    #     image_fixed = image_width_mid - const.TABLE_IMAGE['lower_left']['x']
+    #     v_fixed = image_width_mid - v
+    #     # Apply three simple rule to calculate the y coordinate wrt Baxter
+    #     y_baxter = ((v_fixed * const.TABLE_BAXTER['lower_left']['y']) / image_fixed) + const.Y_OFFSET
+    #     # Obtain the orientation    
+    #     quaternions = quaternion_from_euler(-179, 0, orientation)
+    # else:
+    #     image_fixed = const.TABLE_IMAGE['lower_right']['x'] - image_width_mid
+    #     v_fixed = v - image_width_mid
+    #     y_baxter = ((v_fixed * const.TABLE_BAXTER['lower_right']['y']) / image_fixed) + const.Y_OFFSET_RIGHT
+    #     # Obtain the orientation    
+    #     quaternions = quaternion_from_euler(-179, 0, orientation)
 
-    # Use the width middle point to get y = 0 (coordinate)
-    # and determine the side of the object according to y (left or right / + or -)
-    image_width_mid = const.IMAGE_WIDTH / 2        
-    if v < image_width_mid:
-        image_fixed = image_width_mid - const.TABLE_IMAGE['lower_left']['x']
-        v_fixed = image_width_mid - v
-        # Apply three simple rule to calculate the y coordinate wrt Baxter
-        y_baxter = ((v_fixed * const.TABLE_BAXTER['lower_left']['y']) / image_fixed) + const.Y_OFFSET
-        # Obtain the orientation    
-        quaternions = quaternion_from_euler(-179, 0, orientation)
-    else:
-        image_fixed = const.TABLE_IMAGE['lower_right']['x'] - image_width_mid
-        v_fixed = v - image_width_mid
-        y_baxter = ((v_fixed * const.TABLE_BAXTER['lower_right']['y']) / image_fixed) + const.Y_OFFSET_RIGHT
-        # Obtain the orientation    
-        quaternions = quaternion_from_euler(-179, 0, orientation)
+    # table_height_bx = const.TABLE_BAXTER['upper_left']['x'] # Obtain table height wrt Baxter
+    # table_height_px = const.TABLE_IMAGE['upper_left']['y'] # Obtain table height wrt image
+    # x_baxter = ((table_height_bx * table_height_px) / u) + const.X_OFFSET # Apply three simple rule 
 
-    table_height_bx = const.TABLE_BAXTER['upper_left']['x'] # Obtain table height wrt Baxter
-    table_height_px = const.TABLE_IMAGE['upper_left']['y'] # Obtain table height wrt image
-    x_baxter = ((table_height_bx * table_height_px) / u) + const.X_OFFSET # Apply three simple rule 
-
-    
-    print 'First quaternions, ', quaternions
+    # print 'First quaternions, ', quaternions
+    # return x_baxter, y_baxter, z_baxter, quaternions
+    # #################################
+    x_baxter, y_baxter = solve_pnp.getXYPoint(u, v)
+    print orientation
+    quaternions = quaternion_from_euler(176.0, 0.0, -orientation)
     return x_baxter, y_baxter, z_baxter, quaternions
+    
 
 
 def receiveObjectsDetected(data):
@@ -119,15 +125,15 @@ def moveObject(obj_detected, image):
         name = obj_detected['name']
         coordinates = obj_detected['coordinates']
         # print coordinates       
-        # Calculate u (height) and v (width)
+        # Calculate u (width) and v (height)
         # Coordinates = [y1, x1, y2, x2]
-        u = ((coordinates[2] - coordinates[0]) / 2) + coordinates[0] # y - height
-        v = ((coordinates[3] - coordinates[1]) / 2) + coordinates[1] # x - width
-        dist = depth_array[u, v] # Obtain distance, 720x1280
+        u = ((coordinates[3] - coordinates[1]) / 2) + coordinates[1] # x - width
+        v = ((coordinates[2] - coordinates[0]) / 2) + coordinates[0] # y - height        
+        dist = depth_array[v, u] # Obtain distance, 720x1280
         obj_distances[obj_idx] = dist
         obj_names[obj_idx] = name
-        obj_coordinates[obj_idx, 0] = u
-        obj_coordinates[obj_idx, 1] = v
+        obj_coordinates[obj_idx, 0] = u  # x
+        obj_coordinates[obj_idx, 1] = v  # y
         obj_orientation[obj_idx] = obj_detected['orientation']
     closest_obj = np.argmin(obj_distances) # Get index from closet object  
     print 'Objects detected: {}'.format(', '.join(obj_names))          
@@ -135,7 +141,7 @@ def moveObject(obj_detected, image):
     print 'Pose: x: {}, y: {}, angle: {}'.format(obj_coordinates[closest_obj, 0], \
         obj_coordinates[closest_obj, 1], obj_orientation[closest_obj])      
     # Check if object is less than 0.5 m closer or more 1.5 m further
-    if 0.5 < obj_distances[closest_obj] < 1.5:
+    if 0.8 < obj_distances[closest_obj] < 1.3:
         x, y, z, quaternions = calculateObjPose(obj_names[closest_obj], obj_coordinates[closest_obj, 0], \
             obj_coordinates[closest_obj, 1], obj_orientation[closest_obj])
         if x <> 0 or y <> 0 or z <> 0:            

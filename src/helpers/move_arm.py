@@ -163,11 +163,12 @@ def initplannode(goal, quat, limb):
     # Object pose
     # Quaternions may be reversed
     quaternions = Quaternion(
-        x=quat[0],
-        y=quat[1],
-        z=quat[2],
-        w=quat[3]
+        x=quat[3],
+        y=quat[2],
+        z=quat[1],
+        w=quat[0]
     )
+    print(quaternions)
     object_poses.append(Pose(
         position=Point(x = goal[0], y = goal[1], z = goal[2]),
         orientation=quaternions))

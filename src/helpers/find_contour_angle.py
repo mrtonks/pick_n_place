@@ -81,7 +81,7 @@ def fitAngle(angle, max_angle=180.0):
     else:
         new_angle = 180 - angle
     print("new angle: ", -new_angle)
-    return -new_angle+10
+    return -new_angle
 
 def getContourAnglex(mask, angle_type='deg'):
     """
@@ -174,4 +174,4 @@ def getContourAngle(mask, angle_type='deg'):
     if angle_type == 'rad':
         angle = np.deg2rad(angle)
 
-    return fitAngle(angle)
+    return angle
