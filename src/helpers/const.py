@@ -1,3 +1,4 @@
+import numpy as np
 from geometry_msgs.msg import Quaternion
 
 ANGLE_OFFSET = 90  # Degrees
@@ -74,3 +75,18 @@ Y_OFFSET_RIGHT = 0.0
 Y_PLACING = 0.25
 Z_TABLE_BAXTER = -0.20  # Could be different, but grip hits table on -0.20
 Z_GRIP_DEPTH = 0.04  # 4 cms for the grip depth
+
+
+# Camera Calibration
+IMAGE_POINTS = np.array([
+    (419.419, 305.995),  # Upper left
+    (342.258, 649.724),  # Lower left
+    (972.968, 299.286),  # Upper right
+    (1066.9, 656.494)  # Lower right
+], dtype="double")
+OBJECT_POINTS = np.array([
+    (1.00539650803, 0.515422346073),  # Upper left, TODO add Z
+    (0.385302617015, 0.474767834085),  # Lower left
+    (1.06705514594, -0.507285249659),  # Upper right
+    (0.441618955699, -0.520428725454)  # Lower right
+])
