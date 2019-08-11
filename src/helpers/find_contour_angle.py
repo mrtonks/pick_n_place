@@ -62,10 +62,10 @@ def fitEllipse(cont):
     params = [cx, cy, a, b, angle]
     return params
 
-def fitAngle(angle):
+def fitAngleToBaxter(angle):
     """
-    Return a positive angle fitted to a maximum angle. If negative
-    it will return the positive equivalent.
+    Return an angle fitted to use with Baxter. Returned angle goes from
+    -179.9 to -0
 
     Parameters
     ----------
@@ -76,13 +76,8 @@ def fitAngle(angle):
     ------
     new_angle : ```float```
         Angle transformed into Baxter's yaw.
-    """
-    if angle >= 90:
-        new_angle = -90 -(180 - angle)
-    else:
-        new_angle = -179.9 - (90 - angle)
-    print("new angle: ", new_angle)
-    return new_angle
+    """ 
+    return -179.9 + angle
 
 def getContourAnglex(mask, angle_type='deg'):
     """
@@ -152,14 +147,24 @@ def getContourAngle(mask, angle_type='deg'):
     padded_mask = np.zeros((mask.shape[0] + 2, mask.shape[1] + 2), dtype=np.uint8)
     padded_mask[1:-1, 1:-1] = mask
     # Helps to find the contours from the mask
-    contours, _ = cv2.findContours(padded_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    cnt = contours[0]
+    contours, _ = cv2.findContours(padded_mask.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     
-    rect = cv2.minAreaRect(cnt)
-    (x, y) ,(w, h), a = rect
-    print(rect)
-    angle = 90 - a if (w < h) else -a
+    # Look for the angle with major contour area
+    maxArea = 0
+    best = None
+    for contour in contours:
+        area = cv2.contourArea(contour)
+        if area > maxArea:
+            maxArea = area
+            best = contour
+
+    ellipse = cv2.fitEllipse(best)
+    (c,y),(w,h),a = ellipse
+    print(a)
+    angle = 90 - a if a <= 90 else 180 -  a
     print("first angle: ", angle)
+    angle = fitAngleToBaxter(angle)
+    print("Angle for baxter = ", angle)
     if angle_type == 'rad':
         angle = np.deg2rad(angle)
 
