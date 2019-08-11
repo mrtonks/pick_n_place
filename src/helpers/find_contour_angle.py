@@ -62,26 +62,27 @@ def fitEllipse(cont):
     params = [cx, cy, a, b, angle]
     return params
 
-def fitAngle(angle, max_angle=180.0):
+def fitAngle(angle):
     """
     Return a positive angle fitted to a maximum angle. If negative
     it will return the positive equivalent.
 
     Parameters
     ----------
-    angle : ```int``` or ```float```
+    angle : ```float```
         Angle to convert.
 
-    max_angle : ```int``` or ```float```
-        Maximum angle to fit any angle. 
-        Example: -10 is 170, -25 is 155 (max angle 180).
+    Return
+    ------
+    new_angle : ```float```
+        Angle transformed into Baxter's yaw.
     """
-    if angle < 90:
-        new_angle = 180 - (90 - angle)
+    if angle >= 90:
+        new_angle = -90 -(180 - angle)
     else:
-        new_angle = 180 - angle
-    print("new angle: ", -new_angle)
-    return -new_angle
+        new_angle = -179.9 - (90 - angle)
+    print("new angle: ", new_angle)
+    return new_angle
 
 def getContourAnglex(mask, angle_type='deg'):
     """
@@ -116,19 +117,7 @@ def getContourAnglex(mask, angle_type='deg'):
     print(params)
     x, y, w, h, a = params
 
-    angle = (90 - abs(a) if (w < h) else a) + 90
-    
-    # print('All params: ', params)
-    # TODO: remove
-    # print('Original', params[4])
-    
-    # In case of negative angle, get positive equivalent
-    # if params[4] < -1:
-    #     angle = fitAngle(abs(params[4]))
-    # else:
-    #     angle = fitAngle(params[4])
-    #if 1 < angle < 180:
-    #    angle = angle + ANGLE_OFFSET
+    angle = 90 - a if (w < h) else -a
     
     print('Fitted', angle)
 

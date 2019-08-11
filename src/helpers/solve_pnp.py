@@ -49,13 +49,15 @@ from .const import (
 #https://stackoverflow.com/questions/36584166/how-do-i-make-perspective-transform-of-point-with-x-and-y-coordinate
 
 def getXYPoint(u, v):
+    """ """
+
     try:
-        retval = getPerspectiveTransform(IMAGE_POINTS, OBJECT_POINTS)        
-        point = np.array([[u,v]], dtype = "float32")
-        point = np.array([point]) # It has to be done like this
-        p_Out = perspectiveTransform(point, retval)        
+        retval = getPerspectiveTransform(IMAGE_POINTS, OBJECT_POINTS)
+        point = np.array([[u, v]], dtype="float32")
+        point = np.array([point])  # It has to be done like this
+        p_Out = perspectiveTransform(point, retval)
     except Exception as e:
-        print e
+        print 'Error: {}'.format(e)
         sys.exit()
     destroyAllWindows()
     return np.squeeze(p_Out)
