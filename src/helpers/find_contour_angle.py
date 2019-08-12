@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
-
+# -*- coding: utf-8 -*-
 """
+Pick and Place
 This is "find_contour_angle" module.
 
 The function getContourAngle will obtain the angle from the mask sent. It will use the highest
 contour area to fit an ellipse, get the angle and then it will trasnforme it into
 Baxter's perspective. The function fitANgleToBaxter only transform an angle into 
 Baxter's perspective. 
+
+Copyright (c) 2019 Jesus Vera
+Licensed under the MIT License (see LICENSE for details)
+Written by Jesus Vera
 """
 
 def fitAngleToBaxter(angle):
