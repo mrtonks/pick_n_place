@@ -1,19 +1,27 @@
 import numpy as np
 from geometry_msgs.msg import Quaternion
 
-ANGLE_OFFSET = 90  # Degrees
-# Classes as contained in the coco definitions file
-# Same order (id number) as in the coco file
+# --------------------------------------
+# General constants
+# --------------------------------------
+# Classes as contained in the coco definitions file.
+# Same order (id number) as in the coco file. 
+# If more classes are added, they need to be included here.
 # BG = background
 CLASSES = [
     'BG', 'cat_cup', 'black_trainer', 'small_tupper',
     'katana_umbrella', 'harrogate_water', 'feet_spray',
     'highland_water', 'catbus', 'snapback_hat', 'unstable_unicorns'
 ]
+LIMB = 'right'
+
+# --------------------------------------
+# Measurements (meters)
+# --------------------------------------
+
 HOVER_DISTANCE = 0.15  # meters
 IMAGE_WIDTH = 1280
 IMAGE_HEIGHT = 720
-LIMB = 'right'
 # Object heigth in meters
 OBJECTS = {
     'black_trainer': 0.08,
@@ -27,20 +35,20 @@ OBJECTS = {
     'snapback_hat': 0.10,
     'unstable_unicorns': 0.1
 }
+Z_TABLE_BAXTER = -0.21  # Could be different, but grip hits table on -0.21 m
+Z_GRIP_DEPTH = 0.04  # 4 cms for the grip depth
+
+# --------------------------------------
+# Baxter movements
+# --------------------------------------
 # This quaternions work great. (176, 0, -179)
+# Quaternions for placing the object
 OVERHEAD_ORIENTATION = Quaternion(
     x=0.00786117417644,
     y=0.999878111508,
     z=-0.0125115456827,
     w=-0.00504234997407,
 )
-OVERHEAD_ORIENTATION_START = Quaternion(
-    x=-0.00337619259824,
-    y=0.99983167818,
-    z=-0.0166998965825,
-    w=0.00680662077238
-)
-OVERHEAD_ORIENTATION_ANGLES = [176, 0, 177]
 # Starting position from grip
 START_JOINT_ANGLES = {
     'right_w0': -0.4843544337748194,
@@ -51,47 +59,29 @@ START_JOINT_ANGLES = {
     'right_s0': -0.7558690332305377,
     'right_s1': -1.153553552489831
 }
-# Table's corners' coordinates from Baxter's perspective
-# Calibrate manually if baxter or table is moved
-# Use "rostopic echo -n 1 /robot/limb/{limb}/endpoint_state"
-TABLE_BAXTER = {
-    'upper_left': {'x': 1.00539650803, 'y': 0.515422346073},
-    'lower_left': {'x': 0.385302617015, 'y': 0.474767834085},
-    'upper_right': {'x': 1.06705514594, 'y': -0.507285249659},
-    'lower_right': {'x':  0.441618955699, 'y': -0.520428725454}
-}
-# Table's corners' coordinates from the image in pixels
-# Calibrate manually if camera is moved, from right camera
-# Run object_detection.py alone
-TABLE_IMAGE = {
-    'upper_left': {'x': 419.419, 'y': 305.995},
-    'lower_left': {'x': 342.258, 'y': 649.724},
-    'upper_right': {'x': 972.968, 'y': 299.286},
-    'lower_right': {'x': 1066.9, 'y': 656.494}
-}
-X_OFFSET = 0.00  # Roughly estimation (meters)
-Y_OFFSET = 0.06
-Y_OFFSET_RIGHT = 0.0
-Y_PLACING = 0.25
-Z_TABLE_BAXTER = -0.21  # Could be different, but grip hits table on -0.20
-Z_GRIP_DEPTH = 0.04  # 4 cms for the grip depth
+Y_PLACING = 0.25  # Distance to move the object
 
-
+# --------------------------------------
 # Camera Calibration
+# --------------------------------------
 CAMERA_MATRIX = np.array([
     (723.044309, 0.000000, 472.782029),
     (0.000000, 705.863044, 310.658635),
     (0.000000, 0.000000, 1.000000)
 ], dtype=np.float32)
-
 DIST_COEFF = np.array([-0.145259, -0.035861, -0.009946, -0.033134, 0.000000], dtype=np.float32)
-
+# Table's corners' coordinates from the image in pixels
+# Calibrate manually if camera is moved, from right camera
+# Run object_detection.py alone
 IMAGE_POINTS = np.array([
     (407.677, 271.147),  # Upper left (x, y)
     (322.129, 626.097),  # Lower left
     (978.0, 285.581),  # Upper right
     (1050.13, 637.839)  # Lower right
 ], dtype=np.float32)
+# Table's corners' coordinates from Baxter's perspective
+# Calibrate manually if baxter or table is moved
+# Use "rostopic echo -n 1 /robot/limb/{limb}/endpoint_state"
 OBJECT_POINTS = np.array([
     (0.972906622465, 0.513606512261),  # Upper left (X, Y)
     (0.346150216655, 0.491463406542),  # Lower left

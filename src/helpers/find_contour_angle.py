@@ -3,46 +3,35 @@
 """
 This is "find_contour_angle" module.
 
-The function "fitEllipse" will fit an ellipse into a numpy array of contour points. 
-The function "fitAngle" will return an angle fitted into a maximum angle.
-The function "getContourAngle" will return the angle from a contour mask.
-
-Found in:
-https://stackoverflow.com/questions/39693869/fitting-an-ellipse-to-a-set-of-data-points-in-python
-
-Original code:
-http://nicky.vanforeest.com/misc/fitEllipse/fitEllipse.html
+The function getContourAngle will obtain the angle from the mask sent. It will use the highest
+contour area to fit an ellipse, get the angle and then it will trasnforme it into
+Baxter's perspective. The function fitANgleToBaxter only transform an angle into 
+Baxter's perspective. 
 """
 
 def fitAngleToBaxter(angle):
     """
-    Return an angle fitted to use with Baxter. Returned angle goes from
-    -179.9 to -0
+    Returns an angle fitted to use with Baxter.
 
     Parameters
     ----------
-    angle : ```float```
-        Angle to convert.
+    angle (float): Angle to convert.
 
-    Return
-    ------
-    new_angle : ```float```
-        Angle transformed into Baxter's yaw.
+    Returns
+    -------
+    new_angle (float): Angle transformed into Baxter's yaw.
     """ 
-        
-    return -90 + angle if angle <= 90 else -180 + (angle - 90)
+    new_angle = -90.0 + angle if angle <= 90.0 else -180.0 + (angle - 90.0)
+    return new_angle 
 
-def getContourAngle(mask, angle_type='deg'):
+def getContourAngle(mask, angle_type="deg"):
     """
     Return the angle of a contour.
 
     Parameters
     ----------
-    masks : 2D array
-        2D array of mask values.
-    
-    angle_type : String
-        "rad" for radia180ns or "deg" for degrees.
+    masks (array): 2D array of mask values.
+    angle_type (string): Uses "rad" for radians or "deg" for degrees.
     """
     import sys
     try:
@@ -71,12 +60,12 @@ def getContourAngle(mask, angle_type='deg'):
 
     ellipse = cv2.fitEllipse(best)
     (c,y),(w,h),a = ellipse
-    print("Ellipse = ", a)    
-    angle = 90 + a if a <= 90 else a - 90
-    print("Real = ", angle)
+    
+    # Transform angle from ellipses to normal perspective
+    angle = 90.0 + a if a <= 90.0 else a - 90.0
     angle = fitAngleToBaxter(angle)
-    print("Baxter = ", angle)
-    if angle_type == 'rad':
+    if angle_type == "rad":
+        # Convert degrees to radians
         angle = np.deg2rad(angle)
 
     return angle
