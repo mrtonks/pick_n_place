@@ -40,10 +40,10 @@ def calculateObjPose(obj_to_pick, u, v, orientation):
 
     if obj_to_pick is None:
         print 'No object to pick. Check objects_detected.'
-        return 0, 0, 0
+        return
     elif obj_to_pick not in const.OBJECTS:
         print 'The object to pick is not registered. Check OBJECTS.'
-        return 0, 0, 0
+        return
     else:
         z_baxter = const.Z_TABLE_BAXTER + const.OBJECTS[obj_to_pick] - const.Z_GRIP_DEPTH    
         
@@ -73,9 +73,12 @@ def calculateObjPose(obj_to_pick, u, v, orientation):
     # print 'First quaternions, ', quaternions
     # return x_baxter, y_baxter, z_baxter, quaternions
     # #################################
-    x_baxter, y_baxter = solve_pnp.getXYPoint(u, v)
-    print orientation
-    quaternions = quaternion_from_euler(176.0, 0.0, -orientation)
+    x_baxter, y_baxter = solve_pnp.getXYPoint(u, v)    
+    print 'x=', np.deg2rad(176.0)
+    print 'z=', orientation
+    quaternions = quaternion_from_euler(np.deg2rad(176.0), 0.0, orientation)
+    if quaternions[1] < 0:
+        quaternions[1] = -quaternions[1]
     return x_baxter, y_baxter, z_baxter, quaternions
     
 

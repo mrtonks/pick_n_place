@@ -17,7 +17,7 @@ LIMB = 'right'
 # Object heigth in meters
 OBJECTS = {
     'black_trainer': 0.08,
-    'catbus': 0.05,
+    'catbus': 0.06,
     'cat_cup': 0.10,
     'feet_spray': 0.04,
     'harrogate_water': 0.04,
@@ -87,14 +87,14 @@ CAMERA_MATRIX = np.array([
 DIST_COEFF = np.array([-0.145259, -0.035861, -0.009946, -0.033134, 0.000000], dtype=np.float32)
 
 IMAGE_POINTS = np.array([
-    (382.516, 275.24),  # Upper left
-    (305.355, 630.853),  # Lower left
-    (952.839, 278.595),  # Upper right
-    (1033.35, 630.853)  # Lower right
+    (407.677, 271.147),  # Upper left (x, y)
+    (322.129, 626.097),  # Lower left
+    (978.0, 285.581),  # Upper right
+    (1050.13, 637.839)  # Lower right
 ], dtype=np.float32)
 OBJECT_POINTS = np.array([
-    (0.973203478362, 0.53220275843),  # Upper left (X, Y, Z)
-    (0.335471638151, 0.498266287581),  # Lower left
-    (1.00756553233, -0.487021132297),  # Upper right
-    (0.375112755416, -0.499386870421)  # Lower right
+    (0.972906622465, 0.513606512261),  # Upper left (X, Y)
+    (0.346150216655, 0.491463406542),  # Lower left
+    (0.996763251255, -0.512213883443),  # Upper right
+    (0.372487505071, -0.513767038756)  # Lower right
 ], dtype=np.float32)

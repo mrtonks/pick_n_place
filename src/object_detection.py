@@ -38,7 +38,7 @@ class InferenceConfig(Config):
 
     IMAGE_MIN_DIM = 512
     IMAGE_MAX_DIM = 512
-    DETECTION_MIN_CONFIDENCE = 0.97 # Increse if detecting many objects not there
+    DETECTION_MIN_CONFIDENCE = 0.95 # Increse if detection is returning objects
     NUM_CLASSES = 11
     BACKBONE = 'resnet50'
 
@@ -142,7 +142,7 @@ def getObjectsDetected():
         obj_info['name'] = const.CLASSES[r['class_ids'][idx]] 
         obj_info['coordinates'] = [value for value in r['rois'][idx]]        
         try:
-            obj_info['orientation'] = find_contour_angle.getContourAngle(masks[:, :, idx])
+            obj_info['orientation'] = find_contour_angle.getContourAngle(masks[:, :, idx], 'rad')
         except Exception as e:
             print('Error: {}'.format(e))
             return
