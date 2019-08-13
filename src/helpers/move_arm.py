@@ -4,20 +4,15 @@ import sys
 import struct
 import copy
 
-# rospy - ROS Python API
+# ROS imports
 import rospy
-sys.path.append('/home/jesusvera/ros_ws/src/baxter_interface/src')
 import baxter_interface
-
 from baxter_core_msgs.srv import (
     SolvePositionIK,
     SolvePositionIKRequest
 )
-
 from std_msgs.msg import Header
-
 from sensor_msgs.msg import JointState
-
 from geometry_msgs.msg import (
     PoseStamped,
     Pose, 
@@ -25,8 +20,15 @@ from geometry_msgs.msg import (
     Quaternion
 )
 
-# From ik_pick_and_place_demo.py
-# First run: rosrun baxter_interface joint_trajectory_action_server.py
+from const import (
+    HOVER_DISTANCE,
+    LIMB,
+    OVERHEAD_ORIENTATION,
+    START_JOINT_ANGLES,
+    Y_PLACING
+)
+
+# Taken from Rethink Robotics ik_pick_and_place_demo.py
 
 class PickAndPlace(object):
     def __init__(self, limb, hover_distance, verbose =True):
@@ -39,20 +41,20 @@ class PickAndPlace(object):
         self._iksvc = rospy.ServiceProxy(ns, SolvePositionIK)
         rospy.wait_for_service(ns, 5.0)
         # verify robot is enabled
-        print("Getting robot state... ")
+        print "Getting robot state... "
         self._rs = baxter_interface.RobotEnable(baxter_interface.CHECK_VERSION)
         self._init_state = self._rs.state().enabled
-        print("Enabling robot... ")
+        print "Enabling robot... "
         self._rs.enable()
     
     def move_to_start(self, start_angles=None):
-        print("Moving the {0} arm to start pose...".format(self._limb_name))
+        print "Moving the {0} arm to start pose...".format(self._limb_name)
         if not start_angles:
             start_angles = dict(zip(self._joint_names, [0]*7))
         self._guarded_move_to_joint_position(start_angles)
         self.gripper_open()
         rospy.sleep(1.0)
-        print("Running. Ctrl-c to quit")
+        print "Running. Ctrl-c to quit"
 
     def ik_request(self, pose):
         hdr = Header(stamp=rospy.Time.now(), frame_id='base')
@@ -74,13 +76,13 @@ class PickAndPlace(object):
                         ikreq.SEED_NS_MAP: 'Nullspace Setpoints',
                        }.get(resp_seeds[0], 'None')
             if self._verbose:
-                print("IK Solution SUCCESS - Valid Joint Solution Found from Seed Type: {0}".format(
-                         (seed_str)))
+                print "IK Solution SUCCESS - Valid Joint Solution Found from Seed Type: {0}".format(
+                         (seed_str))
             # Format solution into Limb API-compatible dictionary
             limb_joints = dict(zip(resp.joints[0].name, resp.joints[0].position))
             if self._verbose:
-                print("IK Joint Solution:\n{0}".format(limb_joints))
-                print("------------------")
+                print "IK Joint Solution:\n{0}".format(limb_joints)
+                print "------------------"
         else:
             rospy.logerr("INVALID POSE - No Valid Joint Solution Found.")
             return False
@@ -129,7 +131,7 @@ class PickAndPlace(object):
         joint_angles = self.ik_request(pose)
         self._guarded_move_to_joint_position(joint_angles)
 
-    # rostopic echo -n 1 /robot/joint_states
+    # rost05opic echo -n 1 /robot/joint_states
     def pick(self, pose):
         self._gripper.calibrate()
         # open the gripper
@@ -153,40 +155,38 @@ class PickAndPlace(object):
         # retract to clear object
         self._retract()
 
-def initplannode(goal, limb):
-    #if __name__ == '__main__':
-    #rospy.init_node('move_arm')
-    limb = 'right'
-    hover_distance = 0.15 # meters
-    # Start position
-    starting_joint_angles = {'right_w0': -0.4843544337748194,
-                             'right_w1': 1.3694613483847031,
-                             'right_w2': -0.044485442848677,
-                             'right_e0': 1.3602574636573905,
-                             'right_e1': 1.7303303287347467,
-                             'right_s0': -0.7558690332305377,
-                             'right_s1': -1.153553552489831,}
-    pnp =  PickAndPlace(limb, hover_distance)
-    overhead_orientation = Quaternion(
-        x = -0.0191702838632, #0.0196942511383,
-        y = 0.999594993792, #0.999129134147,
-        z = -0.021030322154, #-0.0314185879279,
-        w = -0.000272308981523 #-0.0191306587435
+def initplannode(goal, quat, limb): 
+    pnp =  PickAndPlace(limb, HOVER_DISTANCE, False)
+    object_poses = []
+    quaternions = Quaternion(
+        x=quat[0],
+        y=quat[1],
+        z=quat[2],
+        w=quat[3]
     )
-
-    object_pose = (Pose(
+    # Object pose
+    object_poses.append(Pose(
         position=Point(x = goal[0], y = goal[1], z = goal[2]),
-        orientation=overhead_orientation))
-    print object_pose
-    #block_poses = []
-    #block_poses.append(Pose(
-    #    position=Point(x = 0.781733325536, y = -0.057134352156, z = -0.0157025346295),
-    #    orientation=overhead_orientation)
-    #)
-    
-    # Move to the desired starting angles
-    pnp.move_to_start(starting_joint_angles)  
-    print 'Picking...'
-    pnp.pick(object_pose)
-    pnp.move_to_start(starting_joint_angles)
+        orientation=quaternions))
+    # Place the object 0.15 m to left or right, depending on the side
+    if goal[1] < 0:
+        goal[1] = goal[1] + Y_PLACING
+    else:
+        goal[1] = goal[1] - Y_PLACING
+    # Next object pose
+    object_poses.append(Pose(
+        position=Point(x = goal[0], y = goal[1], z = goal[2]),
+        orientation=OVERHEAD_ORIENTATION))
+
+    try:
+        # Move to the desired starting angles
+        pnp.move_to_start(START_JOINT_ANGLES)  
+        print "Picking..."
+        pnp.pick(object_poses[0])
+        print "Placing..."
+        pnp.place(object_poses[1])
+        print "Returning..."
+        pnp.move_to_start(START_JOINT_ANGLES)
+    except (Exception, KeyboardInterrupt) as e:
+        rospy.logerr('Error: {}'.format(e))
     return

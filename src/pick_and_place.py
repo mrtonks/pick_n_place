@@ -1,208 +1,190 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+Pick and Place
+The pick and place main processes.
+
+Copyright (c) 2019 Jesus Vera
+Licensed under the MIT License (see LICENSE for details)
+Written by Jesus Vera
+"""
 
 import sys
-import cv2
-import rospy
-import zmq
-import pickle
 import json
 import math
+
+import zmq
+import pickle
 import numpy as np
-from sensor_msgs.msg import Image
-from std_msgs.msg import Bool
 from cv_bridge import CvBridge, CvBridgeError
 from zmq.eventloop import ioloop, zmqstream
 
-import move_arm
+# ROS imports
+import rospy
+from sensor_msgs.msg import Image
+from std_msgs.msg import Bool
+from tf.transformations import quaternion_from_euler
 
-# Constants
-OBJECTS = {
-    'black_trainer': 0.10,
-    'highland_water': 0.04,
-    'harrogate_water': 0.04,
-    'katana_umbrella': 0.05,
-    'small_tupper': 0.045,
-}
-
-TABLE_BAXTER = {
-    'upper_left': {'x': 1.100307662, 'y': 0.446151068025},
-    'lower_left': {'x': 0.488212791458, 'y': 0.487833555787},
-    'upper_right': {'x': 1.07260257605, 'y': -0.560748453554},
-    'lower_right': {'x':  0.436149979162, 'y': -0.515481924476}
-}
-# Calibrate manually if camera is moved
-# From right camera
-TABLE_IMAGE = {
-    'upper_left': {'x': 397.613, 'y': 244.308},
-    'lower_left': {'x': 300.323, 'y': 563.018},
-    'upper_right': {'x': 939.419, 'y': 266.115},
-    'lower_right': {'x': 1001.48, 'y': 596.566}
-}
-Z_TABLE_BAXTER = -0.20 # obj_detectedCould be different, but grip hits on -0.20
-Z_GRIP_DEPTH = 0.04 # 4 cms for the grip depth
-X_OFFSET = 0.03
-Y_OFFSET = 0.03
+from helpers import const, move_arm, solve_perspective
 
 # Global variables
 bridge = None
-objects_detected = None
-limb = 'right'
 
+def calculateObjPose(obj, u, v, orientation):
+    """
+    Calculate the object pose.
 
-def calculateObjPose(obj_to_pick, u, v):
-    """ Calculate the object pose.
+    Parameters
+    ----------
+        obj (str): Name of the object to pick and move
+        u (float): Width in ``pixels`` (y coordinate wrt Baxter)
+        v (float): Height in ``pixels`` (x coordinate wrt Baxter)
 
-    Params:
-    obj_to_pick = Name of the object to pick and move,
-    u = height in pixels (x coordinate wrt Baxter),
-    v = width in pixels (y coordinate wrt Baxter),
-
-    Return:
-    x_baxter = Coordinate x wrt Baxter,
-    y_baxter = Coordinate y wrt Baxter,
+    Returns
+    -------
+        x_baxter (float): Coordinate x wrt Baxter.
+        y_baxter (float): Coordinate y wrt Baxter.
+        z_baxter (float): Coordinate z wrt Baxter.
+        quaternions (float array): Array contains [x, y, z, w] values.
     """
 
     x_baxter = 0
     y_baxter = 0
     z_baxter = 0
 
-    if obj_to_pick is None:
-        print 'No object to pick. Check objects_detected.'
+    # If the object comes empty, or it does not
+    # exists in the constant OBJECTS, return.
+    # Else, calculate coordinate Z wrt Baxter.
+    if obj is None:
+        print "No object to pick. Check objects_detected."
         return
-    elif obj_to_pick not in OBJECTS:
-        print 'The object to pick is not registered. Check OBJECTS.'
+    elif obj not in const.OBJECTS:
+        print "The object to pick is not registered. Check OBJECTS."
         return
     else:
-        z_baxter = Z_TABLE_BAXTER + OBJECTS[obj_to_pick] - Z_GRIP_DEPTH    
-
-    # Obtain table width wrt Baxter (should be meters?)
-    #table_width_bx = abs(TABLE_BAXTER['lower_left']['y']) + abs(TABLE_BAXTER['lower_right']['y'])
-    # Obtain table width wrt image
-    #table_width_px = TABLE_IMAGE['lower_right']['x'] - TABLE_IMAGE['lower_left']['x']
-    # Obtain v wrt to the table in the image
-    #v_wrt_table_px = v - TABLE_IMAGE['lower_left']['x']
-    image_width_ctr = 1280 / 2        
-    if v < image_width_ctr:
-        image_fixed = image_width_ctr - TABLE_IMAGE['lower_left']['x']
-        v_fixed = image_width_ctr - v
-        y_baxter = ((v_fixed * TABLE_BAXTER['lower_left']['y']) / image_fixed) - Y_OFFSET
-        #- TABLE_BAXTER['lower_left']['y'] 
-    else:
-        image_fixed = TABLE_IMAGE['lower_right']['x'] - image_width_ctr 
-        v_fixed = v - image_width_ctr
-        y_baxter = ((v_fixed * TABLE_BAXTER['lower_right']['y']) / image_fixed) - Y_OFFSET 
-        #- TABLE_BAXTER['lower_left']['y'] #+ Y_OFFSET
+        z_baxter = const.Z_TABLE_BAXTER + const.OBJECTS[obj] - const.Z_GRIP_DEPTH    
         
-    # Apply three simple rule and substract from y positive value
-    
-    # y_baxter = (v_wrt_table_px * table_width_bx / table_width_px) \
-    #     - TABLE_BAXTER['lower_left']['y']
-
-    # Obtain table height wrt Baxter (should be meters?)
-    table_height_bx = TABLE_BAXTER['upper_left']['x'] #- TABLE_BAXTER['lower_left']['x']
-    # Obtain table height wrt image
-    table_height_px = TABLE_IMAGE['upper_left']['y']
-    #table_height_px = TABLE_IMAGE['lower_left']['y'] - TABLE_IMAGE['upper_left']['y']
-    # Obtain u wrt to the table in the image
-    #u_wrt_table_px = u - TABLE_IMAGE['upper_left']['y']
-    # Apply three simple rule and substract from y positive value
-    x_baxter = ((table_height_bx * table_height_px) / u) - X_OFFSET
-    #x_baxter = (u_wrt_table_px * table_height_bx * table_height_px)
-
-    return x_baxter, y_baxter, z_baxter
-
+    # Get XY point coordinates from real world 
+    x_baxter, y_baxter = solve_perspective.getXYPoint(u, v)    
+    quaternions = quaternion_from_euler(np.deg2rad(176.0), 0.0, orientation)  # Radians
+    if quaternions[1] < 0:
+        # The y quaternion comes negative and it must be positive 
+        # or the gripper will not use the correct angle value
+        quaternions[1] = -quaternions[1]
+    return x_baxter, y_baxter, z_baxter, quaternions
 
 def receiveObjectsDetected(data):
-    global objects_detected
+    """
+    Receive the objects detected.
 
-    print 'Receiving objects detected...'
+    The objects detected are stored in the global variable objects_detected. 
+    Then it will call the function moveObject and it will send the objects
+    
+    Parameters
+    ----------
+        data (pickle file): Pickle object containing objects detected. 
+    """
+
+    print "Receiving objects detected..."
     try:
-        objects_detected = pickle.loads(data[0])
+        objects_detected = pickle.loads(data[0])        
     except pickle.PickleError as e:
-        print 'Error: {}'.format(e)
-        sys.exit(1)
+        rospy.logerr('Error: {}'.format(e))
 
-def moveObject(data):
+    if objects_detected:
+        image_depth = rospy.wait_for_message('/zed/zed_node/depth/depth_registered', Image)
+        moveObject(objects_detected, image_depth)
+    
+
+def moveObject(objects_detected, image):
+    """Extract values from objects_detected object and moves arm.
+
+    The function will extarct the object values from the objects_detected and 
+    it will call the function that moves the arm sending the values from the
+    closest object.LIMB
+    
+    Parameters
+    ----------
+        objects_detected (object): Objects detected containing name, coordinates and orientation.
+        image (sensor_msgs.msg.Image): Depth image.
+    """
     global bridge
-    global objects_detected
-    global limb
 
     if objects_detected is None:
         return
 
     try:
-        depth_image = bridge.imgmsg_to_cv2(data, "32FC1")
+        image_cv2 = bridge.imgmsg_to_cv2(image, "32FC1")
     except CvBridgeError as e:
-        print 'Error: {}'.format(e)
+        print "Error: {}".format(e)
 
-    depth_array = np.array(depth_image, dtype=np.float32)
-    print('Image size: {width}x{height}'.format(width=data.width, height=data.height))
-            
+    depth_array = np.array(image_cv2, dtype=np.float32)
+    print "Image size: {}x{}".format(image.width, image.height)
     count_obj_detected = len(objects_detected)
-    #print 'Number of objects detected: {}'.format(count_obj_detected)
     # Create numpy arrays for distances and names
-    obj_distances = np.empty((count_obj_detected))
+    # obj_distances = np.zeros((count_obj_detected))
     obj_names = np.empty((count_obj_detected), dtype="S20")
-    obj_u = np.empty_like(obj_distances)
-    obj_v = np.empty_like(obj_distances)
-    x_px = np.empty_like(obj_distances)
+    obj_values = np.zeros((count_obj_detected, 4), dtype=np.float)  # [distance, x, y, orientation]
+    # obj_orientation = np.zeros((count_obj_detected))
     for obj_idx in range(count_obj_detected):
         obj_detected = objects_detected[str(obj_idx)]
-        name = obj_detected['name']
-        coordinates = obj_detected['coordinates']       
-        print coordinates       
-        # Calculate u (height) and v (width)
+        obj_names[obj_idx] = obj_detected['name']
+        coordinates = obj_detected['coordinates']
+        # Calculate u (width) and v (height)
         # Coordinates = [y1, x1, y2, x2]
-        u = ((coordinates[2] - coordinates[0]) / 2) + coordinates[0]
-        v = ((coordinates[3] - coordinates[1]) / 2) + coordinates[1]
-        # Obtain distance
-        dist = depth_array[u, v] # 720x1280               
-        obj_distances[obj_idx] = dist
-        obj_names[obj_idx] = name
-        obj_u[obj_idx] = u
-        obj_v[obj_idx] = v  
-        x_px[obj_idx] = coordinates[1]
-    # Get index from closet object
-    closest_obj = np.argmin(obj_distances)  
-    print 'Objects detected: {}'.format(', '.join(obj_names))          
-    print 'Closest object: {} - {} m\n\n'.format(obj_names[closest_obj], obj_distances[closest_obj])            
-    #getDistanceFromCenter(data, depth_array, obj_u[closest_obj], obj_v[closest_obj])
-    if 0.3 < obj_distances[closest_obj] < 1.5:
-        x, y, z = calculateObjPose(obj_names[closest_obj], obj_u[closest_obj], obj_v[closest_obj])
-        # Publish that Baxter is about to move
-        is_moving_pub.publish(True)
-        move_arm.initplannode([x, y, z], limb)        
+        u = ((coordinates[3] - coordinates[1]) / 2) + coordinates[1] # x - width
+        v = ((coordinates[2] - coordinates[0]) / 2) + coordinates[0] # y - height        
+        dist = depth_array[v, u]  # Obtain depth distance, 720x1280
+        obj_values[obj_idx, 0] = dist
+        obj_values[obj_idx, 1] = u  # x
+        obj_values[obj_idx, 2] = v  # y
+        obj_values[obj_idx, 3] = obj_detected['orientation']
+    closest_obj = np.argmin(obj_values[:, 0]) # Get index from closet object  
+    print "Objects detected: {}".format(', '.join(obj_names))          
+    print "Closest object: {} - {} m".format(obj_names[closest_obj], obj_values[closest_obj, 0])     
+    print "Pose: x: {}, y: {}, angle: {}\n".format(obj_values[closest_obj, 1], \
+        obj_values[closest_obj, 2], obj_values[closest_obj, 3])      
+    
+    if 0.8 < obj_values[closest_obj, 0] < 1.3:
+        # Check if object is less than 0.5 m closer or more 1.5 m further
+        x, y, z, quaternions = calculateObjPose(obj_names[closest_obj], obj_values[closest_obj, 1], \
+            obj_values[closest_obj, 2], obj_values[closest_obj, 3])
         
-    is_moving_pub.publish(False)
-    objects_detected = None
+        if x <> 0 or y <> 0 or z <> 0:            
+            is_moving_pub.publish(True)  # Publish that Baxter is about to move
+            move_arm.initplannode([x, y, z], quaternions, const.LIMB)  # Start moving arm 
+    else:
+        print "Closest object is out of pick up distance."              
+    
+    is_moving_pub.publish(False)  # Publish that Baxter is not moving anymore
 
 def subscriberObjectDetection():
-    addr = '127.0.0.1'  # remote ip or localhost
-    port = '5556'  # same as in the pupil remote gui
+    """Subscriber for Object Detection message using ZMQ"""
+
+    addr = "127.0.0.1"  # remote ip or localhost
+    port = "5556"
     context = zmq.Context()
     socket = context.socket(zmq.SUB)
     socket.setsockopt_string(zmq.SUBSCRIBE, u'')
-    print 'Collecting updates...'
+    print "Collecting updates..."
     socket.connect('tcp://{}:{}'.format(addr, port))
-    print 'Waiting...'
+    print "Waiting..."
     stream = zmqstream.ZMQStream(socket)
     stream.on_recv(receiveObjectsDetected)
     try:
-           ioloop.IOLoop.instance().start()
+        ioloop.IOLoop.instance().start()
     except KeyboardInterrupt:
-        print('\nListener has stopped')     
+        print "Listener has stopped"     
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     rospy.init_node('pick_and_place', log_level=rospy.INFO)
     bridge = CvBridge()
     
-    is_moving_pub = rospy.Publisher("is_moving", Bool, queue_size=10)
-    rospy.Subscriber('/zed/zed_node/depth/depth_registered', Image, moveObject)
-    subscriberObjectDetection()     
-    is_moving_pub.publish(False)
-    
     try:
+        is_moving_pub = rospy.Publisher("is_moving", Bool, queue_size=10)
+        subscriberObjectDetection()     
+        is_moving_pub.publish(False)
         rospy.spin()
-    except rospy.ROSInterruptException:
-        rospy.loginfo('distance_calculation node terminated')
+    except (KeyboardInterrupt, rospy.ROSInterruptException):
+        rospy.loginfo('pick_and_place node terminated')
