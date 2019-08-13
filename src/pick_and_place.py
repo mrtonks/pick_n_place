@@ -56,15 +56,15 @@ def calculateObjPose(obj, u, v, orientation):
     # exists in the constant OBJECTS, return.
     # Else, calculate coordinate Z wrt Baxter.
     if obj is None:
-        print 'No object to pick. Check objects_detected.'
+        print "No object to pick. Check objects_detected."
         return
     elif obj not in const.OBJECTS:
-        print 'The object to pick is not registered. Check OBJECTS.'
+        print "The object to pick is not registered. Check OBJECTS."
         return
     else:
         z_baxter = const.Z_TABLE_BAXTER + const.OBJECTS[obj] - const.Z_GRIP_DEPTH    
         
-    # Get XY point coordinates from real world coordinates
+    # Get XY point coordinates from real world 
     x_baxter, y_baxter = solve_perspective.getXYPoint(u, v)    
     quaternions = quaternion_from_euler(np.deg2rad(176.0), 0.0, orientation)  # Radians
     if quaternions[1] < 0:
@@ -101,7 +101,7 @@ def moveObject(objects_detected, image):
 
     The function will extarct the object values from the objects_detected and 
     it will call the function that moves the arm sending the values from the
-    closest object.
+    closest object.LIMB
     
     Parameters
     ----------
@@ -141,14 +141,15 @@ def moveObject(objects_detected, image):
         obj_values[obj_idx, 3] = obj_detected['orientation']
     closest_obj = np.argmin(obj_values[:, 0]) # Get index from closet object  
     print "Objects detected: {}".format(', '.join(obj_names))          
-    print "Closest object: {} - {} m\n".format(obj_names[closest_obj], obj_values[closest_obj, 0])     
-    print "Pose: x: {}, y: {}, angle: {}".format(obj_values[closest_obj, 1], \
+    print "Closest object: {} - {} m".format(obj_names[closest_obj], obj_values[closest_obj, 0])     
+    print "Pose: x: {}, y: {}, angle: {}\n".format(obj_values[closest_obj, 1], \
         obj_values[closest_obj, 2], obj_values[closest_obj, 3])      
     
     if 0.8 < obj_values[closest_obj, 0] < 1.3:
         # Check if object is less than 0.5 m closer or more 1.5 m further
         x, y, z, quaternions = calculateObjPose(obj_names[closest_obj], obj_values[closest_obj, 1], \
             obj_values[closest_obj, 2], obj_values[closest_obj, 3])
+        
         if x <> 0 or y <> 0 or z <> 0:            
             is_moving_pub.publish(True)  # Publish that Baxter is about to move
             move_arm.initplannode([x, y, z], quaternions, const.LIMB)  # Start moving arm 

@@ -36,9 +36,9 @@ def getXYPoint(u, v):
         retval = getPerspectiveTransform(IMAGE_POINTS, OBJECT_POINTS)
         point = np.array([[u, v]], dtype="float32")
         point = np.array([point])  # DO NOT remove extra brackets
-        p_Out = perspectiveTransform(point, retval)
+        p_out = perspectiveTransform(point, retval)
     except Exception as e:
         print "Error: {}".format(e)
         sys.exit()
     destroyAllWindows()
-    return np.squeeze(p_Out)
+    return np.squeeze(p_out)

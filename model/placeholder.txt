@@ -1,0 +1,1 @@
+Saved checkpoint model goes in this directory.

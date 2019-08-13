@@ -146,8 +146,8 @@ def getObjectsDetected():
     
     r = results[0]
     # Uncomment for visualisation of images with masks and calibration
-    # visualize.display_instances(rgb_image, r['rois'], r['masks'], r['class_ids'], 
-    #                           const.CLASSES, r['scores'], figsize=(10,10))
+    visualize.display_instances(rgb_image, r['rois'], r['masks'], r['class_ids'], 
+                              const.CLASSES, r['scores'], figsize=(10,10))
     count_classes = len(r['class_ids']) # Count classes
     if count_classes == 0:
         print("No objects found. Decrease min confidence if there is an object.")

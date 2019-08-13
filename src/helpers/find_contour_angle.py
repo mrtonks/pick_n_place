@@ -45,7 +45,6 @@ def getContourAngle(mask, angle_type="deg"):
         pass        
     import cv2
     import numpy as np
-    from .const import ANGLE_OFFSET
 
     # Mask Polygon
     # Pad to ensure proper polygons for masks that touch image edges.
