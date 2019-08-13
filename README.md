@@ -10,6 +10,7 @@ This directory contains the code relevant for object recognition and moving Baxt
 https://drive.google.com/open?id=1-OxU4u6b8uU-HMpl7ZBVf1AdtI8kVSbB)
 
 **Main files**
+
 `object_recognition.py`: Subscribes to Zed camera feed only once and transforms the image to the format needed. It uses Pillow library to decode the image into RGBA formatm which it's converted to RGB. It will then load the pre-trained model and run it on "inference" mode using MaskRCNN. It will then publish the results containing the name, coordinates and orientation of the objects found using a messenger library called ZeroMQ.
 
 `pick_and_place.py`: Runs in a separate terminal. It subscribes to the Object Detection feed using ZeroMQ. It will also subsribe to the Zed camera feed only once after receiving the message from the Object Detection. It uses OpenCV to collect the depth image. It will process the coordinates from all objects and use them to select the closest object using the depth image. Finally, it will initiate the planning node to start the pick and place.
@@ -18,6 +19,7 @@ https://drive.google.com/open?id=1-OxU4u6b8uU-HMpl7ZBVf1AdtI8kVSbB)
 This directory contains code to help the main processes during object recognition or pick and place.
 
 **Files**
+
 `const.py`: Constants are stored in this file. Calibration constants can be found in this file. 
 
 `find_contour_angle.py`: Uses OpenCV to find the contours from the mask received and to fit an ellipse within the contour with the biggest area. It processes the angle to return the right angle for Baxter's gripper.
@@ -30,6 +32,7 @@ This directory contains code to help the main processes during object recognitio
 This directory contains test files used for learning. It also contains a Jupyter Notebook that was used to train the MaskRCNN. 
 
 **Jupyter Notebook**
+
 `train_mask_rcnn.ipynb`: Uses a COCO dataset that must have the images, masks, definitions file and information file. Runs the training with the provided dataset and the inference with the test images to detect objects. Inference can also be run on a video. 
 
 ## Calibration 
