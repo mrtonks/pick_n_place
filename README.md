@@ -35,6 +35,14 @@ This directory contains test files used for learning. It also contains a Jupyter
 
 `train_mask_rcnn.ipynb`: Uses a COCO dataset that must have the images, masks, definitions file and information file. Runs the training with the provided dataset and the inference with the test images to detect objects. Inference can also be run on a video. 
 
+### mrcnn/
+
+Contains the files necessary for MaskRCNN.
+
+### model/
+
+Folder to place the pre-trained model.
+
 ## Calibration 
 - Start Baxter and untuck arms
 - Obtain the four corners coordinates from the table wrt Baxter.
