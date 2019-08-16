@@ -59,7 +59,7 @@ START_JOINT_ANGLES = {
     'right_s0': -0.7558690332305377,
     'right_s1': -1.153553552489831
 }
-Y_PLACING = 0.25  # Distance to move the object
+Y_PLACING = 0.15  # Distance to move the object
 
 # --------------------------------------
 # Camera Calibration

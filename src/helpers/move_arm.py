@@ -3,10 +3,13 @@
 import sys
 import struct
 import copy
+import random
+import numpy as np
 
 # ROS imports
 import rospy
 import baxter_interface
+from tf.transformations import quaternion_from_euler
 from baxter_core_msgs.srv import (
     SolvePositionIK,
     SolvePositionIKRequest
@@ -24,6 +27,7 @@ from const import (
     HOVER_DISTANCE,
     LIMB,
     OVERHEAD_ORIENTATION,
+    PLACING_POINT,
     START_JOINT_ANGLES,
     Y_PLACING
 )
@@ -158,7 +162,7 @@ class PickAndPlace(object):
 def initplannode(goal, quat, limb): 
     pnp =  PickAndPlace(limb, HOVER_DISTANCE, False)
     object_poses = []
-    quaternions = Quaternion(
+    quat_object = Quaternion(
         x=quat[0],
         y=quat[1],
         z=quat[2],
@@ -167,16 +171,24 @@ def initplannode(goal, quat, limb):
     # Object pose
     object_poses.append(Pose(
         position=Point(x = goal[0], y = goal[1], z = goal[2]),
-        orientation=quaternions))
-    # Place the object 0.15 m to left or right, depending on the side
+        orientation=quat_object))
+    
+    # Place the object to left or right, depending on the side
     if goal[1] < 0:
         goal[1] = goal[1] + Y_PLACING
     else:
         goal[1] = goal[1] - Y_PLACING
-    # Next object pose
+    # Generate orientation
+    z_placing = random.randint(-1, -179)
+    quat_placing = quaternion_from_euler(np.deg2rad(176.0), 0.0, np.deg2rad(z_placing))
+    if quat_placing[1] < 0:
+        # The y quaternion comes negative and it must be positive 
+        # or the gripper will not use the correct angle value
+        quat_placing[1] = -quat_placing[1]
+    # Placing pose
     object_poses.append(Pose(
         position=Point(x = goal[0], y = goal[1], z = goal[2]),
-        orientation=OVERHEAD_ORIENTATION))
+        orientation=Quaternion(x=quat_placing[0], y=quat_placing[1], z=quat_placing[2], w=quat_placing[3])))
 
     try:
         # Move to the desired starting angles
