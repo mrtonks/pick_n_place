@@ -39,6 +39,8 @@ MODEL_DIR = os.path.abspath("../model/mask_rcnn_cocosynth_dataset_0300.h5")  # P
 is_moving = False
 model = None
 start_time = None
+obj_detection_counter = None
+obj_found_counter = None
 
 class InferenceConfig(Config):
     """
@@ -78,16 +80,16 @@ def check_moving(data):
 def sendImageCalculationData(objects_detected):
     """
     Use ZMQ to send a message to a python 2 script for obtaining 
-    the distances from the objects detected.
+    the distances from the objects dez_placingtected.
 
     Parameters
     ----------
         objects_detected (json): Object containing the class and coordinates of the bounding box.
     """
-    global model
+    global obj_found_counter
     global is_moving
-
-    print("Sending data for distance calculation...")
+    global model    
+    
     context = zmq.Context()
     socket = context.socket(zmq.PUB)
     addr = "127.0.0.1"  # Remote ip or localhost
@@ -98,6 +100,9 @@ def sendImageCalculationData(objects_detected):
     try:
         socket.send_multipart([pickle.dumps(objects_detected, protocol=2)])  # Python 2 accepts only procotol 2.
         is_moving = True
+        obj_found_counter += 1
+        print("Successful object detection counter: {}\n".format(obj_found_counter))
+        print("Sending data for distance calculation...")
         print("Data sent!\n")
     except pickle.PicklingError as e:
         print("Error: {}".format(e))
@@ -108,8 +113,9 @@ def getObjectsDetected():
     
     Implementation of the MaskRCNN is done here. 
     """
-    global start_time
     global model
+    global obj_detection_counter
+    global start_time    
     
     while is_moving:
         pass
@@ -146,13 +152,15 @@ def getObjectsDetected():
     
     r = results[0]
     # Uncomment for visualisation of images with masks and calibration
-    visualize.display_instances(rgb_image, r['rois'], r['masks'], r['class_ids'], 
-                              const.CLASSES, r['scores'], figsize=(10,10))
+    # visualize.display_instances(rgb_image, r['rois'], r['masks'], r['class_ids'], 
+    #                           const.CLASSES, r['scores'], figsize=(10,10))
+    obj_detection_counter += 1
     count_classes = len(r['class_ids']) # Count classes
     if count_classes == 0:
         print("No objects found. Decrease min confidence if there is an object.")
         return
-    print('Number of objects found: {}'.format(count_classes))
+    print("Number of objects detected: {}\n".format(count_classes))
+    print("Object detection counter: {}".format(obj_detection_counter))
     # Create an object with a dictionary of the objects detected
     objects_detected = {}
     for idx in range(count_classes):
@@ -165,13 +173,15 @@ def getObjectsDetected():
     sendImageCalculationData(objects_detected)
 
 if __name__ == "__main__":
+    obj_detection_counter = obj_found_counter = 0
+    
     rospy.init_node('object_detection', log_level=rospy.INFO)
     print("Taking photo for object detection...")
 
     # Before running this file, run in a terminal "roslaunch zed_wrapper zed.launch"
     try:
         rospy.Subscriber('is_moving', Bool, check_moving, queue_size=10)
-        while True:
+        while True:            
             try:                            
                 print("Waiting...")
                 getObjectsDetected()            

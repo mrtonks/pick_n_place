@@ -29,6 +29,7 @@ from helpers import const, move_arm, solve_perspective
 
 # Global variables
 bridge = None
+obj_picked_counter = None
 
 def calculateObjPose(obj, u, v, orientation):
     """
@@ -109,6 +110,7 @@ def moveObject(objects_detected, image):
         image (sensor_msgs.msg.Image): Depth image.
     """
     global bridge
+    global obj_picked_counter
 
     if objects_detected is None:
         return
@@ -150,9 +152,12 @@ def moveObject(objects_detected, image):
         x, y, z, quaternions = calculateObjPose(obj_names[closest_obj], obj_values[closest_obj, 1], \
             obj_values[closest_obj, 2], obj_values[closest_obj, 3])
         
-        if x <> 0 or y <> 0 or z <> 0:            
+        if x <> 0 or y <> 0 or z <> 0:                        
             is_moving_pub.publish(True)  # Publish that Baxter is about to move
-            move_arm.initplannode([x, y, z], quaternions, const.LIMB)  # Start moving arm 
+            is_obj_picked = move_arm.initplannode([x, y, z], quaternions, const.LIMB)  # Start moving arm 
+            if is_obj_picked:
+                obj_picked_counter += 1
+            print "Object picked up counter: {}\n\n".format(obj_picked_counter)
     else:
         print "Closest object is out of pick up distance."              
     
@@ -178,6 +183,7 @@ def subscriberObjectDetection():
 
 
 if __name__ == "__main__":
+    obj_picked_counter = 0
     rospy.init_node('pick_and_place', log_level=rospy.INFO)
     bridge = CvBridge()
     

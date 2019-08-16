@@ -24,15 +24,15 @@ IMAGE_WIDTH = 1280
 IMAGE_HEIGHT = 720
 # Object heigth in meters
 OBJECTS = {
-    'black_trainer': 0.08,
+    'black_trainer': 0.1,
     'catbus': 0.06,
-    'cat_cup': 0.10,
+    'cat_cup': 0.1,
     'feet_spray': 0.04,
     'harrogate_water': 0.04,
     'highland_water': 0.04,
     'katana_umbrella': 0.05,
     'small_tupper': 0.045,
-    'snapback_hat': 0.10,
+    'snapback_hat': 0.1,
     'unstable_unicorns': 0.1
 }
 Z_TABLE_BAXTER = -0.21  # Could be different, but grip hits table on -0.21 m
@@ -59,7 +59,7 @@ START_JOINT_ANGLES = {
     'right_s0': -0.7558690332305377,
     'right_s1': -1.153553552489831
 }
-Y_PLACING = 0.15  # Distance to move the object
+Y_PLACING = 0.2  # Distance to move the object
 
 # --------------------------------------
 # Camera Calibration
@@ -74,17 +74,17 @@ DIST_COEFF = np.array([-0.145259, -0.035861, -0.009946, -0.033134, 0.000000], dt
 # Calibrate manually if camera is moved, from right camera
 # Run object_detection.py alone
 IMAGE_POINTS = np.array([
-    (436.194, 200.955),  # Upper left (x, y)
-    (360.71, 536.434),  # Lower left
-    (999.806, 214.375),  # Upper right
-    (1066.9, 554.891)  # Lower right
+    (414.387, 246.883),  # Upper left (x, y)
+    (328.839, 585.722),  # Lower left
+    (981.355, 265.335),  # Upper right
+    (1046.77, 615.915)  # Lower right
 ], dtype=np.float32)
 # Table's corners' coordinates from Baxter's perspective
 # Calibrate manually if baxter or table is moved
 # Use "rostopic echo -n 1 /robot/limb/{limb}/endpoint_state"
 OBJECT_POINTS = np.array([
-    (1.03002148776, 0.484773895276),  # Upper left (X, Y)
-    (0.413600243068, 0.472330686994),  # Lower left
-    (1.04661466558, -0.534862573487),  # Upper right
-    (0.426926944443, -0.533188000333)  # Lower right
+    (0.988491676705, 0.532791881004),  # Upper left (X, Y)
+    (0.366927718453, 0.528002001492),  # Lower left
+    (1.00775623183, -0.483859597895),  # Upper right
+    (0.386694886798, -0.477398366916)  # Lower right
 ], dtype=np.float32)

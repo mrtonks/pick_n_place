@@ -27,11 +27,11 @@ from const import (
     HOVER_DISTANCE,
     LIMB,
     OVERHEAD_ORIENTATION,
-    PLACING_POINT,
     START_JOINT_ANGLES,
     Y_PLACING
 )
 
+is_obj_picked = False
 # Taken from Rethink Robotics ik_pick_and_place_demo.py
 
 class PickAndPlace(object):
@@ -137,6 +137,7 @@ class PickAndPlace(object):
 
     # rost05opic echo -n 1 /robot/joint_states
     def pick(self, pose):
+        global is_obj_picked
         self._gripper.calibrate()
         # open the gripper
         self.gripper_open()
@@ -146,7 +147,10 @@ class PickAndPlace(object):
         self._servo_to_pose(pose)
         # close gripper
         self.gripper_close()
-        # retract to clear object
+        # retract to clear object        
+        if self._gripper.force() > 5:
+            print "Gripper force = {}".format(self._gripper.force())
+            is_obj_picked = True
         self._retract()
     
     def place(self, pose):
@@ -173,14 +177,15 @@ def initplannode(goal, quat, limb):
         position=Point(x = goal[0], y = goal[1], z = goal[2]),
         orientation=quat_object))
     
-    # Place the object to left or right, depending on the side
+    # Place the object to left or right, 
+    # depending whether the object is to the left or right of the center
     if goal[1] < 0:
         goal[1] = goal[1] + Y_PLACING
     else:
         goal[1] = goal[1] - Y_PLACING
-    # Generate orientation
-    z_placing = random.randint(-1, -179)
-    quat_placing = quaternion_from_euler(np.deg2rad(176.0), 0.0, np.deg2rad(z_placing))
+    # Generate placing quaternions orientation
+    z_angle_placing = -random.randint(1, 179)
+    quat_placing = quaternion_from_euler(np.deg2rad(176.0), 0.0, np.deg2rad(z_angle_placing))
     if quat_placing[1] < 0:
         # The y quaternion comes negative and it must be positive 
         # or the gripper will not use the correct angle value
@@ -201,4 +206,4 @@ def initplannode(goal, quat, limb):
         pnp.move_to_start(START_JOINT_ANGLES)
     except (Exception, KeyboardInterrupt) as e:
         rospy.logerr('Error: {}'.format(e))
-    return
+    return is_obj_picked
