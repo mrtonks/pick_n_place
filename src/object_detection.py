@@ -56,7 +56,7 @@ class InferenceConfig(Config):
 
     IMAGE_MIN_DIM = 512
     IMAGE_MAX_DIM = 512
-    DETECTION_MIN_CONFIDENCE = 0.95  # Increse if detection is returning objects
+    DETECTION_MIN_CONFIDENCE = 0.9  # Increse if detection is returning objects
     NUM_CLASSES = 11
     BACKBONE = 'resnet50'
 

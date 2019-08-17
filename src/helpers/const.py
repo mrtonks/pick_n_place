@@ -74,17 +74,17 @@ DIST_COEFF = np.array([-0.145259, -0.035861, -0.009946, -0.033134, 0.000000], dt
 # Calibrate manually if camera is moved, from right camera
 # Run object_detection.py alone
 IMAGE_POINTS = np.array([
-    (414.387, 246.883),  # Upper left (x, y)
-    (328.839, 585.722),  # Lower left
-    (981.355, 265.335),  # Upper right
-    (1046.77, 615.915)  # Lower right
+    (395.935, 237.288),  # Upper left (x, y)
+    (322.129, 597.934),  # Lower left
+    (984.71, 243.998),  # Upper right
+    (1051.81, 614.708)  # Lower right
 ], dtype=np.float32)
 # Table's corners' coordinates from Baxter's perspective
 # Calibrate manually if baxter or table is moved
 # Use "rostopic echo -n 1 /robot/limb/{limb}/endpoint_state"
 OBJECT_POINTS = np.array([
-    (0.988491676705, 0.532791881004),  # Upper left (X, Y)
-    (0.366927718453, 0.528002001492),  # Lower left
-    (1.00775623183, -0.483859597895),  # Upper right
-    (0.386694886798, -0.477398366916)  # Lower right
+    (0.903235019621, 0.540614639861),  # Upper left (X, Y)
+    (0.292207474503, 0.511420827979),  # Lower left
+    (0.922789181622, -0.474301761218),  # Upper right
+    (0.312392448444, -0.479287886853)  # Lower right
 ], dtype=np.float32)

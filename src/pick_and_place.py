@@ -98,7 +98,7 @@ def receiveObjectsDetected(data):
     
 
 def moveObject(objects_detected, image):
-    """Extract values from objects_detected object and moves arm.
+    """Extracts values from objects_detected object and moves arm.
 
     The function will extarct the object values from the objects_detected and 
     it will call the function that moves the arm sending the values from the
@@ -147,8 +147,11 @@ def moveObject(objects_detected, image):
     print "Pose: x: {}, y: {}, angle: {}\n".format(obj_values[closest_obj, 1], \
         obj_values[closest_obj, 2], obj_values[closest_obj, 3])      
     
-    if 0.8 < obj_values[closest_obj, 0] < 1.3:
-        # Check if object is less than 0.5 m closer or more 1.5 m further
+    # Check if the closest object is inside the table area and reach distance
+    if const.IMAGE_POINTS[0, 0] < obj_values[closest_obj, 1] < const.IMAGE_POINTS[3, 0] \
+        and const.IMAGE_POINTS[0, 1] < obj_values[closest_obj, 2] < const.IMAGE_POINTS[3, 1] \
+            and 0.8 < obj_values[closest_obj, 0] < 1.3:    
+        #if 0.8 < obj_values[closest_obj, 0] < 1.3:
         x, y, z, quaternions = calculateObjPose(obj_names[closest_obj], obj_values[closest_obj, 1], \
             obj_values[closest_obj, 2], obj_values[closest_obj, 3])
         
@@ -159,7 +162,7 @@ def moveObject(objects_detected, image):
                 obj_picked_counter += 1
             print "Object picked up counter: {}\n\n".format(obj_picked_counter)
     else:
-        print "Closest object is out of pick up distance."              
+        print "Closest object is not in the pick up area or is out of reach."              
     
     is_moving_pub.publish(False)  # Publish that Baxter is not moving anymore
 
