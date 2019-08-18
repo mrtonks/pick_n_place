@@ -148,7 +148,7 @@ class PickAndPlace(object):
         # close gripper
         self.gripper_close()
         # retract to clear object        
-        if self._gripper.force() > 5:
+        if self._gripper.force() > 25:
             print "Gripper force = {}".format(self._gripper.force())
             is_obj_picked = True
         self._retract()
@@ -164,6 +164,9 @@ class PickAndPlace(object):
         self._retract()
 
 def initplannode(goal, quat, limb): 
+    global is_obj_picked
+    is_obj_picked = False
+    
     pnp =  PickAndPlace(limb, HOVER_DISTANCE, False)
     object_poses = []
     quat_object = Quaternion(

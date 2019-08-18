@@ -54,7 +54,7 @@ Folder to place the pre-trained model.
         - https://www.stereolabs.com/developers/release/
         - https://github.com/stereolabs/zed-python-api 
     2. Then run in a terminal "roslaunch zed_wrapper zed.launch".
-    3. Make sure to uncomment lines 149-150 from object_detection and save it.
+    3. Make sure to uncomment lines 156-155 from object_detection and save it (visualize.display_instances).
     4. Run "python3 object_detection.py" file only to obtain an image from the table.
         - Before running this, download the checkpoint model: 
             - https://drive.google.com/open?id=1FZuncg8CphmovfLQxOcAdDZXfBmU0tUR

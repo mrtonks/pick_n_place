@@ -30,6 +30,7 @@ from helpers import const, move_arm, solve_perspective
 # Global variables
 bridge = None
 obj_picked_counter = None
+obj_not_picket_counter = None
 
 def calculateObjPose(obj, u, v, orientation):
     """
@@ -111,6 +112,7 @@ def moveObject(objects_detected, image):
     """
     global bridge
     global obj_picked_counter
+    global obj_not_picket_counter
 
     if objects_detected is None:
         return
@@ -124,34 +126,52 @@ def moveObject(objects_detected, image):
     print "Image size: {}x{}".format(image.width, image.height)
     count_obj_detected = len(objects_detected)
     # Create numpy arrays for distances and names
+    # TODO: Delete
     # obj_distances = np.zeros((count_obj_detected))
-    obj_names = np.empty((count_obj_detected), dtype="S20")
-    obj_values = np.zeros((count_obj_detected, 4), dtype=np.float)  # [distance, x, y, orientation]
+    # obj_names = np.empty((count_obj_detected), dtype="S20")
+    # obj_values = np.zeros((count_obj_detected, 4), dtype=np.float)  # [distance, x, y, orientation]
     # obj_orientation = np.zeros((count_obj_detected))
+    arr_names = []
+    arr_values = []
     for obj_idx in range(count_obj_detected):
         obj_detected = objects_detected[str(obj_idx)]
-        obj_names[obj_idx] = obj_detected['name']
+        
         coordinates = obj_detected['coordinates']
         # Calculate u (width) and v (height)
         # Coordinates = [y1, x1, y2, x2]
         u = ((coordinates[3] - coordinates[1]) / 2) + coordinates[1] # x - width
-        v = ((coordinates[2] - coordinates[0]) / 2) + coordinates[0] # y - height        
+        v = ((coordinates[2] - coordinates[0]) / 2) + coordinates[0] # y - height     
+        
+        if const.IMAGE_POINTS[0, 0] > u or u > const.IMAGE_POINTS[3, 0] \
+            or const.IMAGE_POINTS[0, 1] > v or v > const.IMAGE_POINTS[3, 1]:
+            continue
+           
         dist = depth_array[v, u]  # Obtain depth distance, 720x1280
-        obj_values[obj_idx, 0] = dist
-        obj_values[obj_idx, 1] = u  # x
-        obj_values[obj_idx, 2] = v  # y
-        obj_values[obj_idx, 3] = obj_detected['orientation']
+        arr_names.append(obj_detected['name'])
+        arr_values.append([dist, u, v, obj_detected['orientation']])
+        # TODO: Delete
+        # obj_names[obj_idx] = obj_detected['name']
+        # obj_values[obj_idx, 0] = dist
+        # obj_values[obj_idx, 1] = u  # x
+        # obj_values[obj_idx, 2] = v  # y
+        # obj_values[obj_idx, 3] = obj_detected['orientation']
+    
+    if len(arr_names) == 0 or len(arr_values) == 0:
+        print "No objects detected on the table.\n"
+        is_moving_pub.publish(False)  # Publish that Baxter is not moving anymore
+        return
+    
+    obj_names = np.array(arr_names, dtype="S20")
+    obj_values = np.array(arr_values, dtype=np.float)
     closest_obj = np.argmin(obj_values[:, 0]) # Get index from closet object  
+    
     print "Objects detected: {}".format(', '.join(obj_names))          
     print "Closest object: {} - {} m".format(obj_names[closest_obj], obj_values[closest_obj, 0])     
     print "Pose: x: {}, y: {}, angle: {}\n".format(obj_values[closest_obj, 1], \
         obj_values[closest_obj, 2], obj_values[closest_obj, 3])      
     
     # Check if the closest object is inside the table area and reach distance
-    if const.IMAGE_POINTS[0, 0] < obj_values[closest_obj, 1] < const.IMAGE_POINTS[3, 0] \
-        and const.IMAGE_POINTS[0, 1] < obj_values[closest_obj, 2] < const.IMAGE_POINTS[3, 1] \
-            and 0.8 < obj_values[closest_obj, 0] < 1.3:    
-        #if 0.8 < obj_values[closest_obj, 0] < 1.3:
+    if (0.8 < obj_values[closest_obj, 0] < 1.3) or obj_values.shape[0] == 0:    
         x, y, z, quaternions = calculateObjPose(obj_names[closest_obj], obj_values[closest_obj, 1], \
             obj_values[closest_obj, 2], obj_values[closest_obj, 3])
         
@@ -160,11 +180,15 @@ def moveObject(objects_detected, image):
             is_obj_picked = move_arm.initplannode([x, y, z], quaternions, const.LIMB)  # Start moving arm 
             if is_obj_picked:
                 obj_picked_counter += 1
-            print "Object picked up counter: {}\n\n".format(obj_picked_counter)
+            else:
+                obj_not_picket_counter += 1
+            print "Object picked up counter: {}".format(obj_picked_counter)
+            print "Object not picked up counter: {}\n\n".format(obj_not_picket_counter)
     else:
         print "Closest object is not in the pick up area or is out of reach."              
     
     is_moving_pub.publish(False)  # Publish that Baxter is not moving anymore
+    return
 
 def subscriberObjectDetection():
     """Subscriber for Object Detection message using ZMQ"""
@@ -187,6 +211,7 @@ def subscriberObjectDetection():
 
 if __name__ == "__main__":
     obj_picked_counter = 0
+    obj_not_picket_counter = 0
     rospy.init_node('pick_and_place', log_level=rospy.INFO)
     bridge = CvBridge()
     
