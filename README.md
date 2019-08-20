@@ -66,4 +66,16 @@ Folder to place the pre-trained model.
         - Install any other required library:
     5. Update values from IMAGE_POINTS in helpers/const.py file accordingly (x, y)
 
+## Running the application
+There are two scripts that must be executed for the application to start:
+- object_detection.py
+- pick_and_place.py
 
+Steps for running the application:
+1. Open three terminals and execute any necessary commands to run **baxter.sh** as you would normally do.
+2. In one terminal, have ZED wrapper node running using ```roslaunch zed_wrapper zed.launch```.
+3. In another terminal, locate the pick and place python file and run it with ```python pick_and_place.py```.
+4. In the last terminal, locate the object detection python file and run it with ```python3 object_detection.py```.
+5. To stop any of the scripts you need to use ctrl-c and/or ctrl-z.
+
+Notice that ```pick_and_place.py``` runs on python 2.7, but ```object_detection.py``` must run on python 3.5. 
