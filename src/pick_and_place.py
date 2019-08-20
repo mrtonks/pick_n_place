@@ -126,35 +126,22 @@ def moveObject(objects_detected, image):
     print "Image size: {}x{}".format(image.width, image.height)
     count_obj_detected = len(objects_detected)
     # Create numpy arrays for distances and names
-    # TODO: Delete
-    # obj_distances = np.zeros((count_obj_detected))
-    # obj_names = np.empty((count_obj_detected), dtype="S20")
-    # obj_values = np.zeros((count_obj_detected, 4), dtype=np.float)  # [distance, x, y, orientation]
-    # obj_orientation = np.zeros((count_obj_detected))
     arr_names = []
     arr_values = []
     for obj_idx in range(count_obj_detected):
         obj_detected = objects_detected[str(obj_idx)]
-        
         coordinates = obj_detected['coordinates']
         # Calculate u (width) and v (height)
         # Coordinates = [y1, x1, y2, x2]
         u = ((coordinates[3] - coordinates[1]) / 2) + coordinates[1] # x - width
         v = ((coordinates[2] - coordinates[0]) / 2) + coordinates[0] # y - height     
-        
+        # Verify the (u, v) point is inside the table's boundaries
         if const.IMAGE_POINTS[0, 0] > u or u > const.IMAGE_POINTS[3, 0] \
             or const.IMAGE_POINTS[0, 1] > v or v > const.IMAGE_POINTS[3, 1]:
-            continue
-           
+            continue   
         dist = depth_array[v, u]  # Obtain depth distance, 720x1280
         arr_names.append(obj_detected['name'])
         arr_values.append([dist, u, v, obj_detected['orientation']])
-        # TODO: Delete
-        # obj_names[obj_idx] = obj_detected['name']
-        # obj_values[obj_idx, 0] = dist
-        # obj_values[obj_idx, 1] = u  # x
-        # obj_values[obj_idx, 2] = v  # y
-        # obj_values[obj_idx, 3] = obj_detected['orientation']
     
     if len(arr_names) == 0 or len(arr_values) == 0:
         print "No objects detected on the table.\n"
