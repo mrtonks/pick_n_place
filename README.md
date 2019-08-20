@@ -36,17 +36,19 @@ This directory contains test files used for learning. It also contains a Jupyter
 `train_mask_rcnn.ipynb`: Uses a COCO dataset that must have the images, masks, definitions file and information file. Runs the training with the provided dataset and the inference with the test images to detect objects. Inference can also be run on a video. 
 
 ### mrcnn/
-
 Contains the files necessary for MaskRCNN.
 
 ### model/
-
 Folder to place the pre-trained model.
 
 ## Calibration 
 - Start Baxter and untuck arms
 - Obtain the four corners coordinates from the table wrt Baxter.
     1. Move right arm to right corners of the table and for each corner, take the pose position of the arm using "rostopic echo -n 1 /robot/limb/right/endpoint_state".
+    
+    ![Example a](https://github.com/mrtonks/pick_n_place/blob/master/tests/images_calibration/corner_a.jpg)
+    ![Example b](https://github.com/mrtonks/pick_n_place/blob/master/tests/images_calibration/corner_b.jpg)
+    
     2. Update values from OBJECT_POINTS in helpers/const.py file accordingly (only x and y).
     3. Repeat the same for the left side of the table with the left arm.
 - Obtain the pixels coordinates from the four corners of the table
