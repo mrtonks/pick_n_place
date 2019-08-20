@@ -55,10 +55,10 @@ Folder to place the pre-trained model.
     1. Make sure the Zed camera is connected and you have the ZED SDK and zed_wrapper for python installed.
         - https://www.stereolabs.com/developers/release/
         - https://github.com/stereolabs/zed-python-api 
-    2. Then run in a terminal "roslaunch zed_wrapper zed.launch".
-    3. Make sure to uncomment lines 156-155 from object_detection and save it (visualize.display_instances).
-    4. Run "python3 object_detection.py" file only to obtain an image from the table.
-        - Before running this, download the checkpoint model: 
+    2. Then run in a terminal `roslaunch zed_wrapper zed.launch` to publish the ZED node.
+    3. Make sure to uncomment lines 155-156 from `object_detection.py` and save it (visualize.display_instances).
+    4. Run `python3 object_detection.py` file only to obtain an image from the table.
+        - Before running this, download the checkpoint model and place it in the model folder: 
             - https://drive.google.com/open?id=1FZuncg8CphmovfLQxOcAdDZXfBmU0tUR
             - https://www.dropbox.com/s/ll28by2lbbocagq/mask_rcnn_cocosynth_dataset_0300.h5?dl=0 (alternative)
         - Make sure that you fullfil these requirements in order to use MaskRCNN:
@@ -73,9 +73,9 @@ There are two scripts that must be executed for the application to start:
 
 Steps for running the application:
 1. Open three terminals and execute any necessary commands to run **baxter.sh** as you would normally do.
-2. In one terminal, have ZED wrapper node running using ```roslaunch zed_wrapper zed.launch```.
-3. In another terminal, locate the pick and place python file and run it with ```python pick_and_place.py```.
-4. In the last terminal, locate the object detection python file and run it with ```python3 object_detection.py```.
+2. In one terminal, have ZED wrapper node running using `roslaunch zed_wrapper zed.launch`.
+3. In another terminal, locate the pick and place python file and run it with `python pick_and_place.py`.
+4. In the last terminal, locate the object detection python file and run it with `python3 object_detection.py`.
 5. To stop any of the scripts you need to use ctrl-c and/or ctrl-z.
 
-Notice that ```pick_and_place.py``` runs on python 2.7, but ```object_detection.py``` must run on python 3.5. 
+Notice that `pick_and_place.py` runs on python 2.7, but `object_detection.py` must run on python 3.5. 
