@@ -12,6 +12,7 @@ Written by Jesus Vera
 import sys
 import json
 import math
+import time
 
 import zmq
 import pickle
@@ -145,6 +146,7 @@ def moveObject(objects_detected, image):
     
     if len(arr_names) == 0 or len(arr_values) == 0:
         print "No objects detected on the table.\n"
+        time.sleep(5.0)
         is_moving_pub.publish(False)  # Publish that Baxter is not moving anymore
         return
     
@@ -172,7 +174,8 @@ def moveObject(objects_detected, image):
             print "Object picked up counter: {}".format(obj_picked_counter)
             print "Object not picked up counter: {}\n\n".format(obj_not_picket_counter)
     else:
-        print "Closest object is not in the pick up area or is out of reach."              
+        print "Closest object is not in the pick up area or is out of reach."
+        time.sleep(5.0)             
     
     is_moving_pub.publish(False)  # Publish that Baxter is not moving anymore
     return
