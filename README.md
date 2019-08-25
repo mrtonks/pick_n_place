@@ -2,7 +2,7 @@
 MSc Summer Project focused on training an neural network to help Baxter on recognizing and picking up objects.
 
 ## Overview
-This project was developed using the libraries from ROS (kinetic version), MaskRCNN, Baxter and a Zed camera. This repository contains the code to train and test a neural network, and implement it using Baxter robot.
+This project was developed using the libraries from ROS (kinetic version), an implementation of MaskRCNN<sup>[1]</sup>, Baxter Robot Research and a ZED camera. This repository contains the code to implement a neural network for object recognition in Baxter and execute a "pick and place".
 
 ## Code
 ### src/
@@ -78,4 +78,7 @@ Steps for running the application:
 4. In the last terminal, locate the object detection python file and run it with `python3 object_detection.py`.
 5. To stop any of the scripts you need to use ctrl-c and/or ctrl-z.
 
-Notice that `pick_and_place.py` runs on python 2.7, but `object_detection.py` must run on python 3.5. 
+**Note**: `pick_and_place.py` runs on python 2.7, but `object_detection.py` must run on python 3.5. 
+
+## References:
+**[1]** Abdulla, Waleed. "Mask R-CNN for object detection and instance segmentation on Keras and TensorFlow". _Github_.  [https://github.com/matterport/Mask_RCNN](https://github.com/matterport/Mask_RCNN)
