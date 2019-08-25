@@ -7,7 +7,7 @@ This project was developed using the libraries from ROS (kinetic version), an im
 ## Code
 ### src/
 This directory contains the code relevant for object recognition and moving Baxter. The results can be seen in this [video](
-https://drive.google.com/open?id=1-OxU4u6b8uU-HMpl7ZBVf1AdtI8kVSbB)
+https://drive.google.com/open?id=1-OxU4u6b8uU-HMpl7ZBVf1AdtI8kVSbB).
 
 **Main files**
 
