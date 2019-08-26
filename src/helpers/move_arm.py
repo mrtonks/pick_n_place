@@ -32,8 +32,8 @@ from const import (
 )
 
 is_obj_picked = False
-# Taken from Rethink Robotics ik_pick_and_place_demo.py
 
+# Taken from Rethink Robotics ik_pick_and_place_demo.py
 class PickAndPlace(object):
     def __init__(self, limb, hover_distance, verbose =True):
         self._limb_name = limb # string
@@ -181,7 +181,7 @@ def initplannode(goal, quat, limb):
         orientation=quat_object))
     
     # Place the object to left or right, 
-    # depending whether the object is to the left or right of the center
+    # depending whether the object is to the left or right from the center
     if goal[1] < 0:
         goal[1] = goal[1] + Y_PLACING
     else:
