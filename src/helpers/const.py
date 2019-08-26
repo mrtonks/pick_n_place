@@ -19,7 +19,7 @@ LIMB = 'right'
 # Measurements (meters)
 # --------------------------------------
 
-HOVER_DISTANCE = 0.15  # meters
+HOVER_DISTANCE = 0.25  # meters
 IMAGE_WIDTH = 1280
 IMAGE_HEIGHT = 720
 # Object heigth in meters
@@ -64,27 +64,22 @@ Y_PLACING = 0.2  # Distance to move the object
 # --------------------------------------
 # Camera Calibration
 # --------------------------------------
-CAMERA_MATRIX = np.array([
-    (723.044309, 0.000000, 472.782029),
-    (0.000000, 705.863044, 310.658635),
-    (0.000000, 0.000000, 1.000000)
-], dtype=np.float32)
-DIST_COEFF = np.array([-0.145259, -0.035861, -0.009946, -0.033134, 0.000000], dtype=np.float32)
-# Table's corners' coordinates from the image in pixels
+# Table's corners' coordinates from the image in isplay_instances(rgb_image, r['rois'], r['masks'], r['class_ids'], 
+    #              pixels
 # Calibrate manually if camera is moved, from right camera
 # Run object_detection.py alone
 IMAGE_POINTS = np.array([
-    (387.548, 147.739),  # Upper left (x, y)
-    (323.806, 511.739),  # Lower left
-    (991.419, 157.804),  # Upper right
-    (1041.74, 530.191)  # Lower right
+    (374.129, 287.368),  # Upper left (x, y)
+    (295.29, 656.4),  # Lower left
+    (959.548, 289.045),  # Upper right
+    (1033.35, 656.4)  # Lower right
 ], dtype=np.float32)
 # Table's corners' coordinates from Baxter's perspective
 # Calibrate manually if baxter or table is moved
 # Use "rostopic echo -n 1 /robot/limb/{limb}/endpoint_state"
 OBJECT_POINTS = np.array([
-    (0.899091237254, 0.543370149987),  # Upper left (X, Y)
-    (0.286380864919, 0.518640992618),  # Lower left
-    (0.922086953787, -0.470636235218),  # Upper right
-    (0.327869687273, -0.470646725747)  # Lower right
+    (0.892133743204, 0.538196108318),  # Upper left (X, Y)
+    (0.290959643811, 0.532567610818),  # Lower left
+    (0.924495018666, -0.443524070273),  # Upper right
+    (0.327737175746, -0.477879360547)  # Lower right
 ], dtype=np.float32)
