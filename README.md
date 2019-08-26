@@ -42,7 +42,6 @@ Contains the files necessary for MaskRCNN.
 Folder to place the pre-trained model.
 
 # Getting started
-
 ## Requirements
 
 1. Clone this repository
@@ -50,7 +49,10 @@ Folder to place the pre-trained model.
     ```bash
    pip3 install -r requirements-pip.txt
    ```
-3. Follow the steps for calibration
+5. Ensure that you have previously installed ROS Kinetic and have a running environment
+    - http://wiki.ros.org/kinetic/Installation
+    - http://wiki.ros.org/ROS/Tutorials/InstallingandConfiguringROSEnvironment
+4. Follow the steps for calibration
 
 ## Calibration 
 - Start Baxter and untuck arms
@@ -72,9 +74,9 @@ Folder to place the pre-trained model.
     ```
     3. Make sure to uncomment lines 155-156 from `object_detection.py` and save it (visualize.display_instances).
     4. Obtain an image from the table
-    ```bash
-    python3 object_detection.py
-    ```
+        ```bash
+        python3 object_detection.py
+        ```
         - Before running this, download the checkpoint model and move it to the model folder: 
             - https://drive.google.com/open?id=1FZuncg8CphmovfLQxOcAdDZXfBmU0tUR
             - https://www.dropbox.com/s/ll28by2lbbocagq/mask_rcnn_cocosynth_dataset_0300.h5?dl=0 (alternative)
@@ -95,13 +97,13 @@ Steps for running the application:
     roslaunch zed_wrapper zed.launch
     ```
 3. In another terminal, locate the pick and place python file and run it
-```bash
-python pick_and_place.py
-```
+    ```bash
+    python pick_and_place.py
+    ```
 4. In the last terminal, locate the object detection python file and run it 
-```bash
-python3 object_detection.py
-```
+    ```bash
+    python3 object_detection.py
+    ```
 5. To stop any of the scripts you need to use ctrl-c and/or ctrl-z.
 
 **Note**: `pick_and_place.py` runs on python 2.7, but `object_detection.py` must run on python 3.5. 
