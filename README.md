@@ -1,5 +1,5 @@
 # Pick and Place with Baxter
-MSc Summer Project focused on training an neural network to help Baxter on recognizing and picking up objects.
+MSc Summer Project focused on training a neural network to help Baxter on recognizing and picking up objects.
 
 ## Overview
 This project was developed using the libraries from ROS (kinetic version), an implementation of MaskRCNN<sup>[1]</sup>, Baxter Robot Research and a ZED camera. This repository contains the code to implement a neural network for object recognition in Baxter and execute a "pick and place".
@@ -11,22 +11,22 @@ https://drive.google.com/open?id=1-OxU4u6b8uU-HMpl7ZBVf1AdtI8kVSbB).
 
 **Main files**
 
-`object_recognition.py`: Subscribes to Zed camera feed only once and transforms the image to the format needed. It uses Pillow library to decode the image into RGBA formatm which it's converted to RGB. It will then load the pre-trained model and run it on "inference" mode using MaskRCNN. It will then publish the results containing the name, coordinates and orientation of the objects found using a messenger library called ZeroMQ.
+`object_detection.py`: Subscribes to Zed camera feed only once and transforms the image to the format needed. It uses Pillow library to decode the image into RGBA format which it's converted to RGB. It will then load the pre-trained model and run it on "inference" mode using MaskRCNN. Afterwards, it'll publish the results containing the name, coordinates and orientation of the objects found using a messenger library called ZeroMQ.
 
-`pick_and_place.py`: Runs in a separate terminal. It subscribes to the Object Detection feed using ZeroMQ. It will also subsribe to the Zed camera feed only once after receiving the message from the Object Detection. It uses OpenCV to collect the depth image. It will process the coordinates from all objects and use them to select the closest object using the depth image. Finally, it will initiate the planning node to start the pick and place.
+`pick_and_place.py`: Runs in a separate terminal. It subscribes to the Object Detection feed using ZeroMQ. It also subsribes to the Zed camera feed only once after receiving the message from the Object Detection and using OpenCV collects a depth image. It processes the coordinates from all objects and use them to select the closest object using the depth image. Finally, it initiates the planning node to execute the pick and place.
 
 ### src/helpers
 This directory contains code to help the main processes during object recognition or pick and place.
 
 **Files**
 
-`const.py`: Constants are stored in this file. Calibration constants can be found in this file. 
+`const.py`: Constants are stored in this file (calibration constants can be found in this file, too). 
 
-`find_contour_angle.py`: Uses OpenCV to find the contours from the mask received and to fit an ellipse within the contour with the biggest area. It processes the angle to return the right angle for Baxter's gripper.
+`find_contour_angle.py`: Uses OpenCV to find the contours from the mask received and fits an ellipse within the contour with the biggest area. It processes the angle to return the right one for Baxter's gripper.
 
 `move_arm.py`: Receives the point where the object is and the angle transformed into quaternions (necessary for Baxter). It commands Baxter to move the right arm, pick and place the object.
 
-`solve_perspective.py`: Uses OpenCV to get the perspective transform matrix than can be used to transform a point from an image into real world coordinates. It requires 4 points from an image (x, y) in pixels and the same 4 points from the real world (x, y). The axes z is not required, since it's known already.
+`solve_perspective.py`: Uses OpenCV to get the perspective transform matrix than can be used to transform a point from an image into real-world coordinates. It requires 4 points from an image (x, y) in pixels and the same 4 points from the real world (x, y). The axes z is not required, since it's known already.
 
 ### tests/
 This directory contains test files used for learning. It also contains a Jupyter Notebook that was used to train the MaskRCNN. 
@@ -49,7 +49,7 @@ Folder to place the pre-trained model.
     ```bash
    pip3 install -r requirements-pip.txt
    ```
-5. Ensure that you have previously installed ROS Kinetic and have a running environment
+3. Ensure that you have previously installed ROS Kinetic and have a running environment
     - http://wiki.ros.org/kinetic/Installation
     - http://wiki.ros.org/ROS/Tutorials/InstallingandConfiguringROSEnvironment
 4. Follow the steps for calibration
