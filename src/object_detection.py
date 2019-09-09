@@ -133,7 +133,7 @@ def getObjectsDetected():
 
     inference_config = InferenceConfig()
     # Modify max dimension according to the image obtained
-    inference_config.IMAGE_MAX_DIM = data.width if data.width > data.height else data.height
+    inference_config.IMAGE_MAX_DIM = max(data.width, data.height)
     # Initialise model and load weights if it is not initialised yet
     if model is None:
         # Model is initialized in "inference" mode for object detection
