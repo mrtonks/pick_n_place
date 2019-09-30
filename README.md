@@ -83,7 +83,7 @@ Folder to place the pre-trained model.
         - Make sure that you already fullfil these requirements in order to use MaskRCNN:
             - https://github.com/matterport/Mask_RCNN#requirements
         - Install any other required library.
-    5. Update values from IMAGE_POINTS in helpers/const.py file accordingly (x, y)
+    5. Update values from IMAGE_POINTS in helpers/const.py file accordingly (x, y) and comment out the lines again.
 
 ## Running the application
 There are two scripts that must be executed for the application to start:
